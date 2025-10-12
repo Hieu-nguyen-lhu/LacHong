@@ -1,45 +1,48 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý - Lac Hong University</title>
-    <link rel="stylesheet" href="styles/common.css">
-    <link rel="stylesheet" href="styles/admin.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin - Quản trị & Quản lý tài liệu</title>
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <nav class="main-menu">
-        <ul>
-            <li><a href="totrinh.html">Tờ trình</a></li>
-            <li><a href="quyetdinh.html">Quyết định</a></li>
-            <li><a href="khenthuong.html">Khen thưởng</a></li>
-            <li><a href="baocao.html">Báo cáo</a></li>
-            <li><a href="luutru.html">Lưu trữ</a></li>
-            <li><a href="banhanh.html">Ban hành</a></li>
-            <li><a href="admin.html">Quản lý</a></li>
-        </ul>
-    </nav>
-
-    <div class="admin-panel">
-        <h1>Quản lý người dùng</h1>
-        <table class="user-permissions">
-            <thead>
-                <tr>
-                    <th>Tài khoản</th>
-                    <th>Tờ trình</th>
-                    <th>Quyết định</th>
-                    <th>Khen thưởng</th>
-                    <th>Báo cáo</th>
-                    <th>Ban hành</th>
-                    <th>Lưu trữ</th>
-                </tr>
-            </thead>
-            <tbody id="users-list">
-            </tbody>
-        </table>
+  <div class="app-shell">
+    <!-- ====== HEADER ====== -->
+    <div class="header">
+      <div class="brand">
+        <img src="https://github.com/VindWeen/Image/blob/main/Logo_LHU_ASU_Viet.png?raw=true" alt="Logo">
+        <div class="title">ADMIN - QUẢN LÝ HỆ THỐNG</div>
+      </div>
+      <div class="user-area">
+        <div id="user-email" style="font-weight:600"></div>
+        <button id="btn-logout" class="btn btn-ghost">Đăng xuất</button>
+      </div>
     </div>
 
-    <script src="scripts/common.js"></script>
-    <script src="scripts/admin.js"></script>
+    <!-- ====== MENU ====== -->
+    <div id="app-menu" class="navbar"></div>
+
+    <!-- ====== MAIN CONTENT ====== -->
+    <div id="app-content" class="container-main" style="min-height:420px;">
+      <!-- Nội dung động sẽ được JS app.js render -->
+    </div>
+  </div>
+
+  <!-- ====== SCRIPT ====== -->
+  <script src="js/app.js"></script>
+  <script>
+    // Kiểm tra quyền đăng nhập
+    const cur = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!cur || cur.role !== 'admin') {
+      alert('Bạn không có quyền truy cập trang quản trị.');
+      window.location.href = 'index.html';
+    } else {
+      document.getElementById('user-email').textContent = cur.email;
+    }
+
+    // Khởi tạo giao diện admin (menu + trang quản lý)
+    window.app.initAdminUI();
+  </script>
 </body>
 </html>
