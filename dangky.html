@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Tài Khoản</title>
+    <link rel="stylesheet" href="dangky.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <div class="content" style="display: flex;align-items: center;justify-content: center; min-height: 100vh;">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 contents border-content" style="padding-top:20px">
+                    <div class="col-md-10 mx-auto">
+                        <div id="register_area">
+                            <div class="mb-4">
+                                <h5 style="display:flex;justify-content: space-between;align-items: center;">
+                                    <h1><span style="font-weight: bold; text-align: center;">ĐĂNG KÝ TÀI
+                                            KHOẢN</span></h1>
+                                </h5>
+                            </div>
+                            <form id="register_form_client" action="#" method="post" name="register_client">
+                                <input type='hidden' name="language" value="">
+                                <div class="form-group first">
+                                    <label for="scientist_code_reg">Số CCCD* </label>
+                                    <input id="scientist_code_reg" class="form-control" type="text"
+                                        name="scientist_code" required>
+                                </div>
+                                <div class="form-group first">
+                                    <label for="scientist_name_reg">Họ và tên* </label>
+                                    <input id="scientist_name_reg" class="form-control" type="text"
+                                        name="scientist_name" required>
+                                </div>
+
+                                <div class="form-group first">
+                                    <label for="re_email_reg">E-mail* </label>
+                                    <input id="re_email_reg" class="form-control" type="email"  name="re_email"
+                                        required>
+                                </div>
+
+                                <div class="form-group first">
+                                    <label for="re_email2_reg">Nhập lại email* </label>
+                                    <input id="re_email2_reg" class="form-control" type="email"  name="re_email2"
+                                        required>
+                                </div>
+
+                                <div class="form-group first">
+                                    <label for="re_pass_reg">Mật khẩu* </label>
+                                    <input id="re_pass_reg" class="form-control" type="password"  name="re_pass"
+                                        required value="">
+                                </div>
+
+                                <div class="form-group first">
+                                    <label for="re_pass2_reg">Nhập lại mật khẩu* </label>
+                                    <input id="re_pass2_reg" class="form-control" type="password"  name="re_pass2"
+                                        required value="">
+                                </div>
+                                <div class="form-group last mb-4">
+                                </div>
+                                <div class="form-group last mb-4">
+                                    <select id="regRole" required>
+                                        <option value="" disabled selected>Chọn vai trò</option>
+                                        <option value="client">Client</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                                <input type="button" onclick="handle_register_client_standalone()" value="Đăng ký"
+                                    class="btn btn-block btn-primary">
+                                <div class="text-muted" style="margin: 1rem 0; text-align: center;">
+                                    &mdash; or &mdash;
+                                </div>
+
+                                <div style="padding-bottom:20px">
+                                    <a style="border:1px solid #cc5d1b;padding-top:13px;text-decoration: none;width:100%;"
+                                        class="btn btn-white" href="index.html">
+                                        Trở về trang đăng nhập
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handle_register_client_standalone() {
+    // Lấy giá trị từ form
+    var scientist_code = $('#scientist_code_reg').val().trim();
+    var scientist_name = $('#scientist_name_reg').val().trim();
+    var email = $('#re_email_reg').val().trim().toLowerCase();
+    var re_email2 = $('#re_email2_reg').val().trim().toLowerCase();
+    var password = $('#re_pass_reg').val();
+    var re_pass2 = $('#re_pass2_reg').val();
+    var regRole = $('#regRole').val();
+
+    // Kiểm tra form trống
+    if (!scientist_code || !scientist_name || !email || !re_email2 || !password || !re_pass2 || !regRole) {
+        alert('Vui lòng điền đầy đủ thông tin!');
+        return false;
+    }
+
+    // Kiểm tra email 
+    if (email !== re_email2) {
+        alert('Email nhập lại không khớp!');
+        return false;
+    }
+
+    // Kiểm tra password
+    if (password !== re_pass2) {
+        alert('Mật khẩu nhập lại không khớp!');
+        return false;
+    }
+
+    // Kiểm tra CCCD
+    if (scientist_code.length !== 12 || isNaN(scientist_code)) {
+        alert('Số CCCD phải có 12 chữ số!');
+        return false;
+    }
+
+    try {
+        // Lấy danh sách users từ localStorage
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+
+        // Kiểm tra email tồn tại
+        if (users[email]) {
+            alert('Email này đã được đăng ký!');
+            return false;
+        }
+
+        // Thêm user mới
+        users[email] = {
+            scientist_code: scientist_code,
+            scientist_name: scientist_name,
+            password: password,
+            role: regRole
+        };
+
+        // Lưu vào localStorage
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        alert('Đăng ký thành công!');
+        window.location.href = 'index.html';
+        return true;
+
+    } catch (error) {
+        console.error('Lỗi:', error);
+        alert('Có lỗi xảy ra khi đăng ký!');
+        return false;
+    }
+}
+
+    </script>
+</body>
+
+</html>

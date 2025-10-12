@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="keywords" content="Creativeitem" />
+    <meta name="description" content="NAFOSTED" />
+    <meta name="author" content="Creativeitem" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link name="favicon" type="image/x-icon"
+        href="https://github.com/VindWeen/Image/blob/main/Logo_LHU_ASU_Viet.png?raw=true" rel="shortcut icon" />
+    <title>Đăng nhập hệ thống quản lý đề tài Lạc Hồng</title>
+    <link rel="shortcut icon" href="https://github.com/VindWeen/Image/blob/main/Logo_LHU_ASU_Viet.png?raw=true" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://e-services.nafosted.gov.vn/assets/login-form-07/fonts/icomoon/style.css">
+
+    <link rel="stylesheet" href="https://e-services.nafosted.gov.vn/assets/login-form-07/css/owl.carousel.min.css">
+
+    <link rel="stylesheet" href="https://e-services.nafosted.gov.vn/assets/login-form-07/css/bootstrap.min.css">
+
+    <link rel="stylesheet" href="https://e-services.nafosted.gov.vn/assets/login-form-07/css/style_login.css">
+    <script src="https://e-services.nafosted.gov.vn/assets/login-form-07/js/popper.min.js"></script>
+    <script src="https://e-services.nafosted.gov.vn/assets/login-form-07/js/bootstrap.min.js"></script>
+    <script>
+        // Hàm này sẽ giả lập việc chuyển hướng đến VNeID, nhưng thực tế không kết nối
+        function login_vneid() {
+            if (confirm('Điều này sẽ tạo một tài khoản mới, Nếu bạn đã có tài khoản rồi, vui lòng vào tài khoản đó để update CCCD 12, sau đó đăng nhặp bằng VNeID ở mục trên?')) {
+                // Trong môi trường thực, dòng này sẽ chuyển hướng đến cổng VNeID
+                alert("Đang chuyển hướng đến cổng VNeID (chức năng demo)");
+                // window.location.href = 'https://e-services.nafosted.gov.vn/index.php/login/register_account_vneid';
+            }
+        }
+    </script>
+</head>
+
+<body>
+    
+    <div class="loader" id="loader" style="display:none">
+        <div class="loader-inner"
+            style="width: 100vw; height: 100vh;display: flex; justify-content: center; align-items: center;">
+            <img src="./gif.gif">
+        </div>
+    </div>
+    <div class="content" style="display: flex;align-items: center;justify-content: center;" id="content">
+        <div class="container">
+            <div class="row row-header" style="background: linear-gradient(to right, #50b4ff, #005baa);">
+                <a href=""><img src="https://github.com/VindWeen/Image/blob/main/Logo_LHU_ASU_Viet.png?raw=true"
+                        style="height:60px"></a>
+                <h4 style="padding-right: 120px; padding-top: 10px" class="title-header">HỆ THỐNG QUẢN LÝ NHIỆM VỤ KHOA
+                    HỌC VÀ CÔNG NGHỆ&nbsp;&nbsp;</h4>
+                <a href=""><img src="" style="height:60px"></a>
+            </div>
+            <div class="row row-content"
+                style="border: 1px solid #dfdfdf;border-bottom-left-radius:15px;border-bottom-right-radius:15px;background-color:#fff">
+                <div class="col-md-6" style="padding-top:20px">
+
+                    <div id="view_area" style="padding-left:20px;padding-right:20px">
+                        <div class="login-imformation">
+                            <p>HƯỚNG DẪN SỬ DỤNG</p>
+                            <p>1. ĐĂNG KÝ ĐỀ TÀI - HỒ SƠ</p>
+                            <ul>
+                                <li>Đối với Nhà khoa học đăng ký hồ sơ tài trợ mới - bắt buộc <b>đăng nhập bằng
+                                        VNeID</b> để đăng ký.</li>
+                                <li>Đối với Nhà khoa học đã có tài khoản, cập nhật chính xác CCCD 12 số, sau đó đăng
+                                    nhập lại bằng VNeID để được đồng bộ, giữ nguyên thông tin tài khoản.</li>
+                                <li>Đối với Nhà khoa học chưa có tài khoản vui lòng chọn Tạo tài khoản mới bằng VNeID .
+                                </li>
+                            </ul>
+                            <p>2. QUẢN LÝ ĐỀ TÀI (KÝ HỢP ĐỒNG, BÁO CÁO, THÔNG BÁO, ..)</p>
+                            <p>3. ĐÁNH GIÁ TRỰC TUYẾN (HỘI ĐỒNG KHOA HỌC)</p>
+                            <p>4. TỔ CHỨC CHỦ TRÌ QUẢN LÝ ĐỀ TÀI HỒ SƠ</p>
+                            <p style="text-align:right">
+                                <a href="javascript:;" id="have_account_yes" onclick="toggleView(this)"
+                                    style="font-size:14px;color: #a918bb;">
+                                    ?Tôi đã có tài khoản trên OMS cũ nhưng chưa đồng bộ lên hệ thống này?
+                                </a>
+                            </p>
+                        </div>
+
+                        <footer class="main" style="display:flex;gap:10px">
+                            <!-- <a href="https://tinnhiemmang.vn/danh-ba-tin-nhiem/e-servicesnafostedgovvn-1626685086" title="Chung nhan Tin Nhiem Mang" target="_blank"><img src="https://tinnhiemmang.vn/handle_cert?id=e-services.nafosted.gov.vn" width="150px" height="auto" alt="Chung nhan Tin Nhiem Mang"></a> -->
+                            <div style="font-size:14px; padding-left: 120px">
+                                <span><b>Hỗ trợ kỹ thuật: Bộ phận công nghệ thông tin </b></span>
+                                <br> Email: lachong@gmail.com
+                                <br> Copyright &copy; 2025 <a href="" target="_blank">Lac Hong University</a>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+                <div class="col-md-6 contents border-content" style="padding-top:20px">
+                    <div class="row justify-content-center ">
+                        <div class="col-md-10">
+                            <div id="login_area">
+                                <div class="mb-4">
+                                    <h5 style="display:flex;justify-content: space-between;align-items: center;">
+                                        <span>ĐĂNG NHẬP</span>
+                                        <span>
+                                            <a href="index.html"><img style="max-width:40px;"
+                                                    src="https://e-services.nafosted.gov.vn/images/icon_list/flag_vietnam.png"
+                                                    alt="vi" title="Tiếng Việt"></a>
+                                            <a href="index.html"><img style="max-width:40px;"
+                                                    src="https://e-services.nafosted.gov.vn/images/icon_list/flag_eng.png"
+                                                    alt="en" title="English"></a>
+                                        </span>
+                                    </h5>
+                                </div>
+                                <form action="#" method="post" id="login_form_client">
+                                        <div class="form-group first">
+                                            <label for="email_login">E-mail</label>
+                                            <input type="email" class="form-control" id="email_login" name="email" value="" required>
+                                        </div>
+                                        <div class="form-group last mb-4">
+                                            <label for="password_login">Mật khẩu</label>
+                                            <input type="password" class="form-control" id="password_login" name="password" required>
+                                        </div>
+                                        <div class="d-flex mb-5 align-items-center" style="margin-bottom: 2rem !important;">
+                                            <label class="control control--checkbox mb-0"><span class="caption">Hiện mật khẩu</span>
+                                            <input type="checkbox" href="javascript:void(0)" id="hide_pass" onclick="unhide_pass(this)">&nbsp;
+                                            <div class="control__indicator"></div>
+                                            </label>
+                                            <span class="ml-auto"><a href="javascript:void(0)" id="forgot_password_button" onclick="toggleView(this)" class="forgot-pass">Quên mật khẩu?</a></span> 
+                                        </div>
+                                        <p style="color:red;float: left;"></p>
+                                        <input type="button" onclick="handle_login_client()" value="Đăng nhập" class="btn btn-block btn-primary"> <span class="d-block text-center my-4 text-muted" style="margin-bottom: 1rem !important;margin-top: 1rem !important;">&mdash; hoặc &mdash;</span>
+                                        <input type="button" onclick="window.location='dangky.html'" value="Đăng ký" class="btn btn-block btn-primary"> <span class="d-block text-center my-4 text-muted" style="margin-bottom: 1rem !important;margin-top: 1rem !important;"></span>
+                                        <div class="mb-4 text-center" style="display:flex;flex-direction: column;gap:20px">
+                                            <a style="border:1px solid #cc5d1b;padding-top:13px;text-decoration: none;width:100%" id="login_vneid" class="btn btn-white"  href="javascript:login_vneid();">
+                                                <img src="https://e-services.nafosted.gov.vn/images/vneidlogo.png" style="width:26px"> Đăng nhập bằng VNeID (qua Cổng DVCQG)
+                                            </a>
+                                            
+                                            <span class="d-block text-center my-4 text-muted" style="margin-bottom: -10px !important;margin-top: -10px !important;">&mdash; chưa có tài khoản &mdash;</span>
+                                            <a style="border:1px solid #cc5d1b;padding-top:13px;text-decoration: none;width:100%" id="create_new_account_btn" class="btn btn-white" onclick="toggleView(this)" href="javascript:;"> <img src="https://e-services.nafosted.gov.vn/images/icon_list/create_new.png" style="width:26px"> Tạo tài khoản mới
+                                            </a>
+                                        </div>
+                                    </form>
+                                
+                                <!-- <form action="#" method="post" id="login_form_client">
+                                    <div class="form-group first">
+                                        <label for="email_login">E-mail</label>
+                                        <input type="email" class="form-control" id="email_login" name="email" value=""
+                                            required>
+                                    </div>
+                                    <div class="form-group last mb-4">
+                                        <label for="password_login">Mật khẩu</label>
+                                        <input type="password" class="form-control" id="password_login" name="password"
+                                            required>
+                                    </div>
+                                    <div class="d-flex mb-5 align-items-center" style="margin-bottom: 2rem !important;">
+                                        <label class="control control--checkbox mb-0"><span class="caption">Hiện mật
+                                                khẩu</span>
+                                            <input type="checkbox" href="javascript:void(0)" id="hide_pass"
+                                                onclick="unhide_pass(this)">&nbsp;
+                                            <div class="control__indicator"></div>
+                                        </label>
+                                        <span class="ml-auto"><a href="javascript:void(0)" id="forgot_password_button"
+                                                onclick="toggleView(this)" class="forgot-pass">Quên mật khẩu?</a></span>
+                                    </div>
+                                    <p style="color:red;float: left;"></p>
+                                    <input type="button" onclick="handle_login_client()" value="Đăng nhập"
+                                        class="btn btn-block btn-primary"> <span
+                                        class="d-block text-center my-4 text-muted"
+                                        style="margin-bottom: 1rem !important;margin-top: 1rem !important;">&mdash; hoặc
+                                        &mdash;</span>
+                                    <input type="button" onclick="window.location='dangky.html'" value="Đăng ký"
+                                        class="btn btn-block btn-primary">
+                                    <span class="d-block text-center my-4 text-muted"
+                                        style="margin-bottom: 1rem !important;margin-top: 1rem !important;"></span>
+                                    <div class="mb-4 text-center" style="display:flex;flex-direction: column;gap:20px">
+                                        <a style="border:1px solid #cc5d1b;padding-top:13px;text-decoration: none;width:100%"
+                                            id="login_vneid" class="btn btn-white" href="javascript:login_vneid();">
+                                            <img src="https://e-services.nafosted.gov.vn/images/vneidlogo.png"
+                                                style="width:26px"> Đăng nhập bằng VNeID
+                                            (qua Cổng DVCQG)
+                                        </a>
+
+                                        <span class="d-block text-center my-4 text-muted"
+                                            style="margin-bottom: -10px !important;margin-top: -10px !important;">&mdash;
+                                            chưa có tài khoản
+                                            &mdash;</span>
+                                        <a style="border:1px solid #cc5d1b;padding-top:13px;text-decoration: none;width:100%"
+                                            id="create_new_account_btn" class="btn btn-white" onclick="toggleView(this)"
+                                            href="javascript:;"> <img
+                                                src="https://e-services.nafosted.gov.vn/images/icon_list/create_new.png"
+                                                style="width:26px"> Tạo tài khoản mới
+                                        </a>
+                                    </div>
+                                </form> -->
+                            </div>
+                            <div id="forgot_password_area" style="display: none;">
+                                <div class="mb-4">
+                                    <h5 style="display:flex;justify-content: space-between;align-items: center;">
+                                        <span>QUÊN MẬT KHẨU</span>
+                                    </h5>
+                                </div>
+                                <form class="" action="#" method="post" id="forgot_password_form_client">
+                                    <div class="form-group first mb-4">
+                                        <label for="forgot_password_email_client">Email đăng nhập</label>
+                                        <input type="email" class="form-control" id="forgot_password_email_client"
+                                            name="email" value="" required>
+                                    </div>
+                                    <input type="button"
+                                        onclick="alert('Chức năng quên mật khẩu demo, không có backend'); toggleView({id: 'login_button'});"
+                                        value="Nhận email" class="btn btn-block btn-primary">
+                                    <span class="d-block text-center my-4 text-muted"
+                                        style="margin-bottom: 1rem !important;margin-top: 1rem !important;">&mdash; or
+                                        &mdash;</span>
+                                    <a style="border:1px solid #cc5d1b;padding-top:13px;text-decoration: none;width:100%"
+                                        class="btn btn-white" href="javascript:void(0)" id="login_button"
+                                        onclick="toggleView(this)">
+                                        Trở về trang đăng nhập </a>
+                                </form>
+                            </div>
+                            <div id="sync_area" style="display: none;">
+                                <div class="mb-4">
+                                    <h5 style="display:flex;justify-content: space-between;align-items: center;">
+                                        <span>ĐỒNG BỘ TÀI KHOẢN</span>
+                                    </h5>
+                                </div>
+                                <form id="sync_form_client" class="" action="#" method="post" name="sync_form_client">
+
+                                    <div class="form-group first">
+                                        <select name="TYPE" class="form-control" required>
+                                            <option value="">Chọn OMS</option>
+                                            <option value="1">OMS - Khoa học tự nhiên & kỹ thuật</option>
+                                            <option value="2">OMS - Khoa học xã hội & nhân văn</option>
+                                            <option value="3">OMS - Việt Bỉ</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group first">
+                                        <label for="email_sync_client">E-mail </label>
+                                        <input id="email_sync_client" class="form-control" type="email"
+                                            name="email_sync" required>
+                                    </div>
+                                    <div class="form-group first">
+                                        <label for="password_sync_client">Mật khẩu </label>
+                                        <input id="password_sync_client" class="form-control" type="password"
+                                            name="password_sync" required value="">
+                                    </div>
+
+                                    <div class="form-group first">
+                                        <label for="id_card_sync_client">CCCD (12 số) * </label>
+                                        <input id="id_card_sync_client" class="form-control" type="number"
+                                            name="id_card_sync" required value="">
+                                    </div>
+                                    <div class="form-group last mb-4">
+                                    </div>
+                                    <input type="button"
+                                        onclick="alert('Chức năng đồng bộ tài khoản demo, không có backend'); toggleView({id: 'login_button'});"
+                                        value="Đồng bộ" class="btn btn-block btn-primary">
+
+                                    <span class="d-block text-center my-4 text-muted"
+                                        style="margin-bottom: 1rem !important;margin-top: 1rem !important;">&mdash; or
+                                        &mdash;</span>
+                                    <div style="padding-bottom:20px">
+                                        <a style="border:1px solid #cc5d1b;padding-top:13px;text-decoration: none;width:100%;"
+                                            class="btn btn-white" href="javascript:void(0)" id="login_button"
+                                            onclick="toggleView(this)">
+                                            Trở về trang đăng nhập </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        // JavaScript cho hiệu ứng loader và chuyển đổi view
+        var body = document.body,
+            html = document.documentElement;
+
+        var height_all = Math.max(body.scrollHeight, body.offsetHeight,
+            html.clientHeight, html.scrollHeight, html.offsetHeight);
+
+        document.getElementById('content').style.minHeight = (height_all - 40) + 'px';
+
+        function view_loader() {
+            document.getElementById("loader").style.display = "block";
+        }
+        function hide_loader() {
+            document.getElementById("loader").style.display = "none";
+        }
+
+        // Hàm chuyển đổi giữa các form (đăng nhập, đăng ký, quên mật khẩu, đồng bộ)
+        function toggleView(elem) {
+            // Ẩn tất cả các khu vực trước
+            $('#login_area').hide();
+            $('#forgot_password_area').hide();
+            $('#register_area').hide();
+            $('#sync_area').hide();
+
+            if (elem.id === 'forgot_password_button') {
+                $('#forgot_password_area').show();
+            } else if (elem.id === 'create_new_account_btn') { // Nút "Tạo tài khoản mới"
+                $('#register_area').show();
+            } else if (elem.id === 'have_account_yes') { // Nút "Đã có tài khoản trên OMS cũ" (đồng bộ)
+                $('#sync_area').show();
+            } else if (elem.id === 'login_button') { // Nút "Trở về trang đăng nhập"
+                $('#login_area').show();
+            } else { // Mặc định hiển thị trang đăng nhập
+                $('#login_area').show();
+            }
+        }
+
+        // Hàm hiện/ẩn mật khẩu
+        function unhide_pass(elem) {
+            var passwordField = $('#password_login'); // Đổi ID này nếu có nhiều trường mật khẩu
+            if (passwordField.attr('type') == 'password') {
+                passwordField.attr('type', 'text');
+            } else {
+                passwordField.attr('type', 'password');
+            }
+        }
+
+        // --- Các hàm xử lý Đăng ký và Đăng nhập bằng LocalStorage (DEMO) ---
+
+        function handle_login_client() {
+    try {
+        var email = $('#email_login').val().trim().toLowerCase();
+        var password = $('#password_login').val();
+
+        // Kiểm tra form
+        if (!email || !password) {
+            alert('Vui lòng điền đầy đủ email và mật khẩu!');
+            return false;
+        }
+
+        // Lấy dữ liệu từ localStorage
+        var users = JSON.parse(localStorage.getItem('users')) || {};
+
+        // Debug
+        console.log('Users from localStorage:', users);
+        console.log('Attempting login with:', email);
+
+        // Kiểm tra tài khoản
+        if (users[email] && users[email].password === password) {
+            var role = users[email].role;
+            console.log('Login successful with role:', role);
+
+            view_loader();
+
+            setTimeout(function() {
+                hide_loader();
+                alert('Đăng nhập thành công!');
+                
+                // Lưu thông tin người dùng hiện tại
+                localStorage.setItem('currentUser', JSON.stringify({
+                    email: email,
+                    role: role,
+                    scientist_name: users[email].scientist_name
+                }));
+
+                // Chuyển hướng theo role
+                if (role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'test.html';
+                }
+            }, 1000);
+
+        } else {
+            alert('Email hoặc mật khẩu không đúng!');
+        }
+    } catch (error) {
+        console.error('Lỗi đăng nhập:', error);
+        alert('Có lỗi xảy ra khi đăng nhập!');
+    }
+}
+
+
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <style>
+        a {
+            text-decoration: none !important;
+        }
+
+        .loader {
+            bottom: 0;
+            height: 100%;
+            left: 0;
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 100%;
+            z-index: 1111;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-x: hidden;
+        }
+
+        .loader-inner {
+            position: absolute;
+            left: 50%;
+            top: 35%;
+            -webkit-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            -o-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            height: 100px;
+            width: 100px;
+        }
+
+        /* Các kiểu CSS cho loader và animation giữ nguyên như bạn đã cung cấp */
+        .circle {
+            width: 9vmax;
+            height: 9vmax;
+            border-right: 4px solid #123f6d;
+            border-radius: 50%;
+            -webkit-animation: spinRight 800ms linear infinite;
+            animation: spinRight 800ms linear infinite;
+        }
+
+        .circle:before {
+            content: '';
+            width: 6vmax;
+            height: 6vmax;
+            display: block;
+            position: absolute;
+            top: calc(50% - 3vmax);
+            left: calc(50% - 3vmax);
+            border-left: 3px solid #0d59b9;
+            border-radius: 100%;
+            -webkit-animation: spinLeft 800ms linear infinite;
+            animation: spinLeft 800ms linear infinite;
+        }
+
+        .circle:after {
+            content: '';
+            width: 6vmax;
+            height: 6vmax;
+            display: block;
+            position: absolute;
+            top: calc(50% - 3vmax);
+            left: calc(50% - 3vmax);
+            border-left: 3px solid #39c2d7;
+            border-radius: 100%;
+            -webkit-animation: spinLeft 800ms linear infinite;
+            animation: spinLeft 800ms linear infinite;
+            width: 4vmax;
+            height: 4vmax;
+            top: calc(50% - 2vmax);
+            left: calc(50% - 2vmax);
+            border: 0;
+            border-right: 2px solid #39c2d7;
+            -webkit-animation: none;
+            animation: none;
+        }
+
+        @-webkit-keyframes spinLeft {
+            from {
+                -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+            }
+
+            to {
+                -webkit-transform: rotate(720deg);
+                transform: rotate(720deg);
+            }
+        }
+
+        @keyframes spinLeft {
+            from {
+                -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+            }
+
+            to {
+                -webkit-transform: rotate(720deg);
+                transform: rotate(720deg);
+            }
+        }
+
+        @-webkit-keyframes spinRight {
+            from {
+                -webkit-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
+
+            to {
+                -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+            }
+        }
+
+        @keyframes spinRight {
+            from {
+                -webkit-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
+
+            to {
+                -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+            }
+        }
+    </style>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+</body>
+
+</html>

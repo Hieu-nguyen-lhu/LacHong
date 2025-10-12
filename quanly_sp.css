@@ -1,0 +1,141 @@
+/* === Cơ bản === */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f1f6fb;
+  margin: 0;
+  padding: 0;
+}
+
+.section {
+  max-width: 1200px;
+  margin: 50px auto 40px auto;
+  padding: 0 20px;
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0d47a1;
+  margin-bottom: 20px;
+  padding-bottom: 6px;
+  text-align: center;
+}
+
+.site-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 30px;
+  background: linear-gradient(to right, #50b4ff, #005baa);
+  color: #fff;
+}
+
+.header-left img {
+  height: 50px;
+  width: 200px;
+}
+
+.header-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.header-right {
+  display: flex;
+  gap: 10px;
+}
+
+.header-right a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* === TABLE CHUẨN SẠCH === */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+table thead th {
+  background: #0074cc;
+  color: #fff;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+table tbody td {
+  background: #ffffff;
+  text-align: center;
+  padding: 10px 8px;
+  border: 1px solid #ddd; /* Màu viền xám nhạt */
+}
+
+table tbody tr:hover td {
+  background: #f1f6fb;
+}
+
+img {
+  border-radius: 4px;
+  margin: 2px;
+  max-width: 50px;
+}
+
+/* === BO GÓC BẢNG === */
+table thead th:first-child {
+  border-top-left-radius: 6px;
+}
+
+table thead th:last-child {
+  border-top-right-radius: 6px;
+}
+
+table tbody td:first-child {
+  border-left: 1px solid #ddd;
+}
+
+table tbody td:last-child {
+  border-right: 1px solid #ddd;
+}
+
+table tbody tr:last-child td {
+  border-bottom: 1px solid #ddd;
+}
+
+/* === ĐỂ 2 BẢNG BẰNG NHAU === */
+#pendingAwardsContainer,
+#approvedAwardsContainer {
+  width: 950px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.section {
+  max-width: 1200px;
+  margin: 120px auto 40px auto;
+  padding: 0 20px;
+}
+
+
+/* === Nút === */
+#exportBtn {
+  display: block;
+  margin: 30px auto;
+  background: #0074cc;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+#exportBtn:hover {
+  background: #005baa;
+}

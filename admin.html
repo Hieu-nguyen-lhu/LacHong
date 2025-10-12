@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trang Quản Trị - Admin</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <header class="site-header">
+    <img src="https://raw.githubusercontent.com/VindWeen/Image/refs/heads/main/Logo_LHU_ASU_Viet.png" alt="Đại học Lạc Hồng">
+    <div class="header-title">Trang Quản Trị Admin</div>
+  </header>
+
+  <div class="main-wrapper">
+    <div class="header-wrapper">
+      <h2>Danh sách tài khoản CLIENT</h2>
+      <div class="table-controls" style="display: flex; gap: 10px ;">
+        <button onclick="window.location='test.html'">thông tin nhà khoa học</button>
+        <button onclick="window.location='quanly_sp.html'">thông tin giải thưởng</button>
+        <button onclick="window.location='quanly-tiet.html'">thông tin tiết nghĩa vụ</button>
+        <button id="sortPositionBtn">Sắp xếp theo Chức vụ</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Họ tên</th>
+          <th>Ngày sinh</th>
+          <th>Giới tính</th>
+          <th>Số CCCD</th>
+          <th>Email</th>
+          <th>SĐT</th>
+          <th>Chức vụ</th>
+
+          <th >Trang cá nhân</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody">
+        <!-- Dữ liệu sẽ được render bằng JS -->
+      </tbody>
+    </table>
+<h2>Giải thưởng chờ duyệt</h2>
+<div id="pendingAwardsContainer"></div>
+
+<h2>Giải thưởng đã duyệt</h2>
+<div id="approvedAwardsContainer"></div>
+
+  </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="admin.js"></script>
+
+</body>
+</html>
