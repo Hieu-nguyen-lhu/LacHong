@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quyết định - Lac Hong University</title>
+    <link rel="stylesheet" href="styles/common.css">
+</head>
+<body>
+    <nav class="main-menu">
+        <ul>
+            <li><a href="totrinh.html">Tờ trình</a></li>
+            <li><a href="quyetdinh.html">Quyết định</a></li>
+            <li><a href="khenthuong.html">Khen thưởng</a></li>
+            <li><a href="baocao.html">Báo cáo</a></li>
+            <li><a href="luutru.html">Lưu trữ</a></li>
+            <li><a href="banhanh.html">Ban hành</a></li>
+        </ul>
+    </nav>
+
+    <div class="document-container">
+        <div class="form-row">
+            <div class="stt-input">
+                <label>STT:</label>
+                <input type="number" class="stt" readonly value="1"/>
+            </div>
+            <div class="note-input">
+                <label>Ghi chú:</label>
+                <input type="text" class="note" placeholder="Nhập ghi chú quyết định..."/>
+            </div>
+            <div class="file-upload">
+                <label>Đính kèm:</label>
+                <input type="file" class="attachment" accept=".doc,.docx"/>
+            </div>
+            <button class="save-btn">Lưu</button>
+        </div>
+        <button class="add-more-btn">Thêm</button>
+    </div>
+
+    <script src="scripts/common.js"></script>
+    <script src="scripts/quyetdinh.js"></script>
+</body>
+</html>

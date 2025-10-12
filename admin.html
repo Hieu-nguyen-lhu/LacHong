@@ -1,54 +1,45 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Trang Quản Trị - Admin</title>
-  <link rel="stylesheet" href="./admin.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý - Lac Hong University</title>
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/admin.css">
 </head>
 <body>
-  <header class="site-header">
-    <img src="https://raw.githubusercontent.com/VindWeen/Image/refs/heads/main/Logo_LHU_ASU_Viet.png" alt="Đại học Lạc Hồng">
-    <div class="header-title">Trang Quản Trị Admin</div>
-  </header>
+    <nav class="main-menu">
+        <ul>
+            <li><a href="totrinh.html">Tờ trình</a></li>
+            <li><a href="quyetdinh.html">Quyết định</a></li>
+            <li><a href="khenthuong.html">Khen thưởng</a></li>
+            <li><a href="baocao.html">Báo cáo</a></li>
+            <li><a href="luutru.html">Lưu trữ</a></li>
+            <li><a href="banhanh.html">Ban hành</a></li>
+            <li><a href="admin.html">Quản lý</a></li>
+        </ul>
+    </nav>
 
-  <div class="main-wrapper">
-    <div class="header-wrapper">
-      <h2>Danh sách tài khoản CLIENT</h2>
-      <div class="table-controls" style="display: flex; gap: 10px ;">
-        <button onclick="window.location='test.html'">thông tin nhà khoa học</button>
-        <button onclick="window.location='quanly_sp.html'">thông tin giải thưởng</button>
-        <button onclick="window.location='quanly-tiet.html'">thông tin tiết nghĩa vụ</button>
-        <button id="sortPositionBtn">Sắp xếp theo Chức vụ</button>
-      </div>
+    <div class="admin-panel">
+        <h1>Quản lý người dùng</h1>
+        <table class="user-permissions">
+            <thead>
+                <tr>
+                    <th>Tài khoản</th>
+                    <th>Tờ trình</th>
+                    <th>Quyết định</th>
+                    <th>Khen thưởng</th>
+                    <th>Báo cáo</th>
+                    <th>Ban hành</th>
+                    <th>Lưu trữ</th>
+                </tr>
+            </thead>
+            <tbody id="users-list">
+            </tbody>
+        </table>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Họ tên</th>
-          <th>Ngày sinh</th>
-          <th>Giới tính</th>
-          <th>Số CCCD</th>
-          <th>Email</th>
-          <th>SĐT</th>
-          <th>Chức vụ</th>
 
-          <th >Trang cá nhân</th>
-        </tr>
-      </thead>
-      <tbody id="userTableBody">
-        <!-- Dữ liệu sẽ được render bằng JS -->
-      </tbody>
-    </table>
-<h2>Giải thưởng chờ duyệt</h2>
-<div id="pendingAwardsContainer"></div>
-
-<h2>Giải thưởng đã duyệt</h2>
-<div id="approvedAwardsContainer"></div>
-
-  </div>
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="admin.js"></script>
-
+    <script src="scripts/common.js"></script>
+    <script src="scripts/admin.js"></script>
 </body>
 </html>
