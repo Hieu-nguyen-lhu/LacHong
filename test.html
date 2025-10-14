@@ -28,7 +28,13 @@
     const cur=JSON.parse(localStorage.getItem('currentUser')||'null');
     if(!cur){alert('Chưa đăng nhập');location='index.html';}
     document.getElementById('user-email').textContent=cur.email;
-    window.app.initClientUI();
+    window.addEventListener('DOMContentLoaded', () => {
+    if (window.app && typeof window.app.initClientUI === 'function') {
+      window.app.initClientUI();
+    } else {
+      console.error('❌ Không tìm thấy app.initClientUI');
+    }
+  });
   </script>
 </body>
 </html>

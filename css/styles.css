@@ -13,57 +13,262 @@ html,body{height:100%;font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;backg
 .navbar a.active{background:#005F9E;color:#fff;box-shadow:0 3px 10px rgba(0,95,158,0.15)}
 .navbar a:hover{background:rgb(97, 147, 188);color:#FFC107;transform:translateY(-2px);transition:0.12s}
 
-.container-main{padding:18px}
+.container-main{padding:24px}
 
-.row-card{display:grid;grid-template-columns:90px 1fr 220px 110px;gap:12px;align-items:center;padding:12px;border-radius:10px;border:1px solid #e9f0fb;margin-bottom:12px;background:#fff}
-.row-card input[type=number]{padding:10px;border-radius:8px;border:1px solid #d8e7ff}
-.row-card textarea{padding:10px;border-radius:8px;border:1px solid #d8e7ff;min-height:56px;resize:vertical}
-.row-card input[type=file]{font-size:13px}
-.row-actions{display:flex;gap:8px;justify-content:flex-end}
+/* ===== FORM ROW CARD LAYOUT ===== */
+.row-card{
+  display:grid;
+  grid-template-columns: 110px 350px 190px 180px;
+  gap:10px;
+  padding:16px;
+  border-radius:10px;
+  border:1px solid #e9f0fb;
+  margin-bottom:16px;
+  background:#fff;
+  align-items:start;
+}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer}
-.btn-primary{background:#007BFF;color:#fff;box-shadow:0 6px 18px rgba(0,123,255,0.12)}
-.btn-ghost{background:transparent;border:1px solid #d0e6ff;color:#005F9E}
-.btn-yellow{background:#FFC107;color:#07203b;font-weight:700}
+/* Hàng 1: Số thứ tự */
+.row-card > input[type=number]{
+  grid-column:1;
+  grid-row:1;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #d8e7ff;
+  font-weight:600;
+  font-size:14px;
+  height:56px;
+}
 
-.add-row{display:flex;gap:10px;align-items:center;margin-top:8px}
+/* Hàng 1: Ghi chú (ngắn lại) */
+.row-card > textarea{
+  grid-column:2;
+  grid-row:1;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #d8e7ff;
+  min-height:56px;
+  max-height:56px;
+  resize:none;
+  font-family:inherit;
+  font-size:14px;
+  overflow-y:auto;
+}
 
-.archive-section{display:block;padding:14px;border-radius:10px;border:1px dashed #e1eefc;background:#fbfdff;margin-bottom:12px}
-.archive-section h3{font-size:16px;margin-bottom:8px}
-.archive-table{width:100%;border-collapse:collapse;margin-top:8px}
-.archive-table th,.archive-table td{padding:8px;border-bottom:1px solid #eef6ff;text-align:left;font-size:14px}
-.archive-empty{color:#8a99b2;font-style:italic}
+/* Hàng 1: Người thực hiện */
+.row-card > select{
+  grid-column:3;
+  grid-row:1;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #d8e7ff;
+  font-size:14px;
+  height:56px;
+  width:100%;
+}
 
-.user-table{width:100%;border-collapse:collapse}
-.user-table th,.user-table td{padding:10px;border-bottom:1px solid #eef6ff}
+/* Hàng 1: File upload */
+.row-card > div:nth-child(4){
+  grid-column:4;
+  grid-row:1;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:0;
+  align-items:center;
+}
 
+.row-card div:nth-child(4) > div:first-child{
+  font-size:13px;
+  color:#52657a;
+  font-weight:500;
+  padding:0;
+  margin:0;
+  line-height:1;
+}
+
+.row-card input[type=file]{
+  font-size:12px;
+  padding:6px 0;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+}
+
+.row-card [data-filehint]{
+  font-size:11px;
+  color:#8b99b0;
+  margin:0;
+  padding:0;
+  line-height:1.2;
+}
+
+/* Hàng 2: Nút Lưu và Xóa */
+.row-card > .row-actions{
+  grid-column:1/5;
+  grid-row:2;
+  display:flex;
+  gap:8px;
+  justify-content:flex-start;
+  margin-top:-6px;
+}
+
+.row-actions{
+  display:flex;
+  gap:8px;
+}
+
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  padding:10px 16px;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+  font-size:14px;
+  transition:all 0.2s ease;
+}
+
+.btn-primary{
+  background:#007BFF;
+  color:#fff;
+  box-shadow:0 6px 18px rgba(0,123,255,0.12);
+  min-width:100px;
+}
+
+.btn-primary:hover{
+  background:#0056b3;
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,123,255,0.2);
+}
+
+.btn-ghost{
+  background:white;
+  border:1px solid #d0e6ff;
+  color:#005F9E;
+  min-width:80px;
+}
+
+.btn-ghost:hover{
+  background:#ff0000;
+  color:#ffffff;
+  border-color:#ffffff;
+  transform:translateY(-2px);
+}
+
+.btn-yellow{
+  background:#FFC107;
+  color:#07203b;
+  font-weight:700;
+}
+
+.btn-yellow:hover{
+  background:#ffb300;
+  transform:translateY(-2px);
+}
+
+.add-row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-top:12px;
+  margin-bottom:20px;
+}
+
+/* ===== ARCHIVE ===== */
+.archive-section{
+  display:block;
+  padding:14px;
+  border-radius:10px;
+  border:1px dashed #e1eefc;
+  background:#fbfdff;
+  margin-bottom:12px;
+}
+
+.archive-section h3{
+  font-size:16px;
+  margin-bottom:8px;
+  color:#005F9E;
+}
+
+.archive-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:8px;
+  font-size:14px;
+}
+
+.archive-table th{
+  background:#f0f5ff;
+  padding:10px;
+  border-bottom:2px solid #d8e7ff;
+  text-align:left;
+  font-weight:600;
+  color:#005F9E;
+}
+
+.archive-table td{
+  padding:10px;
+  border-bottom:1px solid #eef6ff;
+}
+
+.archive-table tr:hover{
+  background:#fbfdff;
+}
+
+.archive-empty{
+  color:#8a99b2;
+  font-style:italic;
+  padding:10px;
+}
+
+/* ===== USER MANAGEMENT ===== */
+.user-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:16px;
+}
+
+.user-table th{
+  background:#f0f5ff;
+  padding:12px;
+  border-bottom:2px solid #d8e7ff;
+  text-align:left;
+  font-weight:600;
+  color:#005F9E;
+}
+
+.user-table td{
+  padding:12px;
+  border-bottom:1px solid #eef6ff;
+}
+
+.user-table input[type=checkbox]{
+  cursor:pointer;
+  width:18px;
+  height:18px;
+}
+
+/* ===== RESPONSIVE ===== */
 @media(max-width:900px){
-  .row-card{grid-template-columns:60px 1fr;grid-template-rows:auto auto;gap:8px}
-  .row-card>:nth-child(3){grid-column:1/3}
-  .row-card>:nth-child(4){grid-column:1/3;display:flex;justify-content:flex-end}
+  .row-card{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+
+  .row-card > input[type=number],
+  .row-card > textarea,
+  .row-card > select,
+  .row-card > div:nth-child(4){
+    grid-column:1;
+    grid-row:auto;
+  }
+
+  .row-card > .row-actions{
+    grid-column:1;
+    grid-row:auto;
+  }
+
   .navbar{overflow:auto}
-}
-
-/* Styling cho nút dựa trên class đang có */
-.btn-ghost {
-  /* Thiết lập kiểu dáng cơ bản của nút Đăng xuất */
-  background-color:#007BFF; /* Nút "ghost" thường có nền trong suốt */
-  color: rgb(255, 255, 255); /* Màu chữ trắng/sáng để phù hợp với nền tối */
-  border: 2px solid white; /* Viền trắng */
-  padding: 10px 20px;
-  border-radius: 8px; /* Bo góc */
-  cursor: pointer;
-  
-  /* Tạo hiệu ứng nổi: Ánh sáng mờ */
-  transition: box-shadow 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
-  
-  /* Shadow nhẹ mặc định */
-  box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); 
-}
-
-/* HIỆU ỨNG HOVER - Làm nút nổi lên */
-.btn-ghost:hover {
-  background-color: red; 
-  transform: translateY(-2px); /* Nhấc nút lên 2px */
-
 }
