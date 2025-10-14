@@ -2,6 +2,9 @@
    app.js - Toàn bộ logic của website quản lý tài liệu
    Phiên bản: 2025-10
    ============================================== */
+/* --- TẠO ADMIN MẶC ĐỊNH KHI CHƯA CÓ USERS --- */
+
+
 
 const TYPES = ['totrinh', 'quyetdinh', 'khenthuong', 'baocao', 'banhanh'];
 const TYPE_LABEL = {

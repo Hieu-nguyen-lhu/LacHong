@@ -22,7 +22,7 @@
 
     <link rel="stylesheet" href="https://e-services.nafosted.gov.vn/assets/login-form-07/css/bootstrap.min.css">
 
-    <link rel="stylesheet" href="https://e-services.nafosted.gov.vn/assets/login-form-07/css/style_login.css">
+    <link rel="stylesheet" href="css/dangnhap.css">
     <script src="https://e-services.nafosted.gov.vn/assets/login-form-07/js/popper.min.js"></script>
     <script src="https://e-services.nafosted.gov.vn/assets/login-form-07/js/bootstrap.min.js"></script>
     <script>
@@ -41,8 +41,8 @@
     
     <div class="loader" id="loader" style="display:none">
         <div class="loader-inner"
-            style="width: 100vw; height: 100vh;display: flex; justify-content: center; align-items: center;">
-            <img src="./gif.gif">
+            style="width: 100vw; height: 100vh;display: flex; justify-content: center; align-items: center;margin-top: 100px;">
+            <img src="./loading.gif">
         </div>
     </div>
     <div class="content" style="display: flex;align-items: center;justify-content: center;" id="content">
@@ -270,7 +270,32 @@
         </div>
     </div>
     <script type="text/javascript">
-        // JavaScript cho hiệu ứng loader và chuyển đổi view
+        
+        window.addEventListener("load", function () {
+  (function initDefaultAdmins() {
+    const existing = JSON.parse(localStorage.getItem("users") || "{}");
+
+    // Nếu chưa có thì mới tạo
+    if (Object.keys(existing).length === 0) {
+      const defaultAdmins = {};
+      for (let i = 1; i <= 5; i++) {
+        const email = `admin${i}@gmail.com`;
+        defaultAdmins[email] = {
+          password: "lelong123",
+          role: "admin",
+          scientist_name: `Quản trị viên ${i}`,
+          allowSave: true,
+        };
+      }
+      localStorage.setItem("users", JSON.stringify(defaultAdmins));
+      console.log("✅ Đã tạo sẵn 5 tài khoản admin mặc định.");
+    } else {
+      console.log("ℹ️ Tài khoản đã tồn tại, không cần tạo lại.");
+    }
+  })();
+});
+
+// JavaScript cho hiệu ứng loader và chuyển đổi view
         var body = document.body,
             html = document.documentElement;
 
@@ -500,6 +525,8 @@
                 transform: rotate(0deg);
             }
         }
+
+        
     </style>
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
