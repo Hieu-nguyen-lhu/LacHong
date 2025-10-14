@@ -1,5 +1,5 @@
 body {
-  background: url("/assets/login-form-07/images/background-login.jpg");
+  background-image:url(../background-login.jpg) ;
   font-family: "Roboto", sans-serif;
   background-color: #f8fafb; }
 

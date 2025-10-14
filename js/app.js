@@ -388,11 +388,17 @@ function renderArchive() {
       // Lọc theo search query
       let filteredList = list;
       if (searchQuery.trim() !== '') {
-        const query = searchQuery.trim().toLowerCase();
+        const query = searchQuery.trim();
         filteredList = list.filter(e => {
-          const no = String(e.no).trim().toLowerCase();
+          const no = String(e.no).trim();
           const executor = String(e.executor || '').trim().toLowerCase();
-          return no.includes(query) || executor.includes(query);
+          const queryLower = query.toLowerCase();
+          
+          // CHỈ tìm trong số TT và người thực hiện
+          const noMatch = no === query;
+          const executorMatch = executor.includes(queryLower);
+          
+          return noMatch || executorMatch;
         });
       }
       

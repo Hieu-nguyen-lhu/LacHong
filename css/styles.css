@@ -1,5 +1,5 @@
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;background:#f6f7fb;color:#0b1a2b}
+html,body{height:100%;font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;background:#d0e3ff;color:#0b1a2b}
 
 .app-shell{max-width:1100px;margin:20px auto;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(3,10,40,0.08);overflow:hidden}
 .header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:linear-gradient(90deg,#005F9E 0%,#007BFF 100%);color:#fff}
