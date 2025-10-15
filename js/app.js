@@ -83,7 +83,15 @@ function canCurrentUserSave() {
 function canCurrentUserLogin(email) {
   const users = JSON.parse(localStorage.getItem('users') || '{}');
   const u = users[email];
-  return u ? (u.allowLogin !== false) : false;
+  if (!u) return false;
+  
+  // Nếu là admin: mặc định cho phép (trừ khi bị tắt rõ ràng)
+  if (u.role === 'admin') {
+    return u.allowLogin !== false;
+  }
+  
+  // Nếu là client: phải được bật rõ ràng mới cho phép
+  return u.allowLogin === true;
 }
 
 // ======= NGƯỜI THỰC HIỆN - COMBOBOX =======
@@ -106,12 +114,12 @@ function createExecutorCombobox() {
   input.type = 'text';
   input.className = 'executor-input';
   input.placeholder = 'Chọn hoặc nhập người thực hiện';
-  input.style.padding = '10px';
+  input.style.padding = '8px 10px';
   input.style.borderRadius = '8px';
   input.style.border = '1px solid #d8e7ff';
   input.style.fontSize = '14px';
   input.style.width = '100%';
-  input.style.height = '56px';
+  input.style.height = '40px';
   input.style.boxSizing = 'border-box';
   
   const dropdown = document.createElement('div');
@@ -128,26 +136,69 @@ function createExecutorCombobox() {
   dropdown.style.display = 'none';
   dropdown.style.zIndex = '1000';
   
-  const updateDropdown = () => {
-    dropdown.innerHTML = '';
-    const executors = getExecutors();
-    executors.forEach(name => {
-      const item = document.createElement('div');
-      item.textContent = name;
-      item.style.padding = '10px 12px';
-      item.style.cursor = 'pointer';
-      item.style.borderBottom = '1px solid #f0f5ff';
-      item.style.fontSize = '14px';
-      item.onmouseover = () => item.style.background = '#f0f5ff';
-      item.onmouseout = () => item.style.background = '#fff';
-      item.onclick = () => {
-        input.value = name;
-        dropdown.style.display = 'none';
-        input.focus();
-      };
-      dropdown.appendChild(item);
-    });
-  };
+  // Thêm vào trong hàm createExecutorCombobox(), sau phần updateDropdown
+const updateDropdown = () => {
+  dropdown.innerHTML = '';
+  const executors = getExecutors();
+  executors.forEach(name => {
+    const item = document.createElement('div');
+    item.style.display = 'flex';
+    item.style.justifyContent = 'space-between';
+    item.style.alignItems = 'center';
+    item.style.padding = '10px 12px';
+    item.style.cursor = 'pointer';
+    item.style.borderBottom = '1px solid #f0f5ff';
+    item.style.fontSize = '14px';
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = name;
+    nameSpan.style.flex = '1';
+    
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '✕';
+    deleteBtn.style.background = 'transparent';
+    deleteBtn.style.border = 'none';
+    deleteBtn.style.color = '#ff4444';
+    deleteBtn.style.cursor = 'pointer';
+    deleteBtn.style.padding = '0 8px';
+    deleteBtn.style.fontSize = '16px';
+    deleteBtn.style.fontWeight = 'bold';
+    deleteBtn.style.opacity = '0';
+    deleteBtn.style.transition = 'opacity 0.2s';
+    
+    item.onmouseover = () => {
+      item.style.background = '#f0f5ff';
+      deleteBtn.style.opacity = '1';
+    };
+    item.onmouseout = () => {
+      item.style.background = '#fff';
+      deleteBtn.style.opacity = '0';
+    };
+    
+    nameSpan.onclick = () => {
+      input.value = name;
+      dropdown.style.display = 'none';
+      input.focus();
+    };
+    
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm(`Xóa "${name}" khỏi danh sách?`)) {
+        const executors = getExecutors();
+        const updated = executors.filter(n => n !== name);
+        saveExecutors(updated);
+        updateDropdown();
+        if (input.value === name) {
+          input.value = '';
+        }
+      }
+    };
+    
+    item.appendChild(nameSpan);
+    item.appendChild(deleteBtn);
+    dropdown.appendChild(item);
+  });
+};
   
   updateDropdown();
   container.appendChild(input);
@@ -244,47 +295,80 @@ function renderMenu(activeKey) {
   });
 }
 
-// ======= FORM NHẬP =======
+// ======= FORM NHẬP - LAYOUT MỚI 3 Ô CÙNG HÀNG =======
 function createRowCard(type) {
   const div = document.createElement('div');
   div.className = 'row-card';
-  div.innerHTML = `
-    <input type="number" class="no-input" placeholder="Số thứ tự">
-    <textarea class="note-input" placeholder="Ghi chú..."></textarea>
-    <div class="executor-container"></div>
-    <div>
-      <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm</div>
-      <input class="file-input" type="file">
-      <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-filehint></div>
-    </div>
-    <div>
-      <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm tệp ban hành</div>
-      <input class="banhanh-file-input" type="file" accept=".pdf,application/pdf">
-      <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-banhanhfilehint></div>
-    </div>
-    <div class="row-actions">
-      <button class="btn btn-primary save-btn">Lưu</button>
-      <button class="btn btn-ghost remove-btn">Xóa</button>
-    </div>
-  `;
-
-  const executorContainer = div.querySelector('.executor-container');
+  
+  // Hàng 1: 3 ô input cùng 1 hàng
+  const row1 = document.createElement('div');
+  row1.className = 'row-card-row-1';
+  
+  const noInput = document.createElement('input');
+  noInput.type = 'number';
+  noInput.className = 'no-input';
+  noInput.placeholder = 'Số thứ tự';
+  
+  const noteInput = document.createElement('textarea');
+  noteInput.className = 'note-input';
+  noteInput.placeholder = 'Nội dung...';
+  
+  
+  const executorContainer = document.createElement('div');
+  executorContainer.className = 'executor-container';
   const executorCombo = createExecutorCombobox();
   executorContainer.appendChild(executorCombo);
+  
+  row1.appendChild(noInput);
+  row1.appendChild(noteInput);
+  row1.appendChild(executorContainer);
+  
+  // Hàng 2: 2 file đính kèm
+  const row2 = document.createElement('div');
+  row2.className = 'row-card-row-2';
+  
+  const fileDiv = document.createElement('div');
+  fileDiv.innerHTML = `
+    <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm (*.docx)</div>
+    <input class="file-input" type="file">
+    <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-filehint></div>
+  `;
+  
+  const banhanhFileDiv = document.createElement('div');
+  banhanhFileDiv.innerHTML = `
+    <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm tệp ban hành (*.pdf)</div>
+    <input class="banhanh-file-input" type="file" accept=".pdf,application/pdf">
+    <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-banhanhfilehint></div>
+  `;
+  
+  row2.appendChild(fileDiv);
+  row2.appendChild(banhanhFileDiv);
+  
+  // Hàng 3: Nút action
+  const rowActions = document.createElement('div');
+  rowActions.className = 'row-actions';
+  rowActions.innerHTML = `
+    <button class="btn btn-primary save-btn">Lưu</button>
+    <button class="btn btn-ghost remove-btn">Xóa</button>
+  `;
+  
+  div.appendChild(row1);
+  div.appendChild(row2);
+  div.appendChild(rowActions);
 
-  const fileInput = div.querySelector('.file-input');
+  const fileInput = fileDiv.querySelector('.file-input');
   fileInput.accept = type === 'banhanh'
     ? '.pdf,application/pdf'
     : '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-  const fileHint = div.querySelector('[data-filehint]');
+  const fileHint = fileDiv.querySelector('[data-filehint]');
   fileInput.onchange = () => {
     const f = fileInput.files[0];
     fileHint.textContent = f ? `${f.name} (${Math.round(f.size / 1024)} KB)` : '';
   };
 
-  const banhanhFileInput = div.querySelector('.banhanh-file-input');
-  const banhanhFileHint = div.querySelector('[data-banhanhfilehint]');
+  const banhanhFileInput = banhanhFileDiv.querySelector('.banhanh-file-input');
+  const banhanhFileHint = banhanhFileDiv.querySelector('[data-banhanhfilehint]');
   banhanhFileInput.onchange = () => {
     const f = banhanhFileInput.files[0];
     banhanhFileHint.textContent = f ? `${f.name} (${Math.round(f.size / 1024)} KB)` : '';
@@ -297,8 +381,8 @@ function createRowCard(type) {
     if (!cur) return alert('Chưa đăng nhập.');
     if (!canCurrentUserSave()) return alert('Bạn không có quyền lưu.');
 
-    const no = div.querySelector('.no-input').value.trim();
-    const note = div.querySelector('.note-input').value.trim();
+    const no = noInput.value.trim();
+    const note = noteInput.value.trim();
     const executor = executorCombo.getExecutor();
     const f = fileInput.files[0];
     const banhanhFile = banhanhFileInput.files[0];
@@ -500,7 +584,7 @@ function renderBanhanhPage() {
         <td style="font-weight:600;color:#005F9E">${e.no || ''}</td>
         <td>
           <span style="color:#005F9E;font-weight:600;">${e.banhanhFilename}</span><br>
-          <button class="btn" style="color:white;background:#28a745;margin-top:4px" data-action="download-banhanh" data-type="${selectedType}" data-id="${e.id}">Tải xuống</button>
+          <button class="btn" style="color:white;background:#007BFF;margin-top:4px" data-action="download-banhanh" data-type="${selectedType}" data-id="${e.id}">Tải xuống</button>
           ${cur && cur.role === 'admin' ? `<button class="btn btn-ghost" style="margin-top:4px;margin-left:8px" data-action="delete-banhanh" data-type="${selectedType}" data-id="${e.id}">Xóa file BH</button>` : ''}
         </td>
         <td style="font-size:12px;color:#6b7a8a">${new Date(e.createdAt).toLocaleString()}</td>
@@ -724,7 +808,7 @@ function renderArchive() {
         </td>
         <td>
           ${e.banhanhFilename ? `<span style="color:#005F9E;font-weight:600;">${e.banhanhFilename}</span><br>` : ''}
-          ${e.banhanhFilename ? `<button class="btn" style="color:white;background:#28a745;margin-top:4px" data-action="download-banhanh" data-type="${selectedType}" data-id="${e.id}">Tải xuống</button>` : '<span style="color:#999">Không có file</span>'}
+          ${e.banhanhFilename ? `<button class="btn" style="color:white;background:#007BFF;margin-top:4px" data-action="download-banhanh" data-type="${selectedType}" data-id="${e.id}">Tải xuống</button>` : '<span style="color:#999">Không có file</span>'}
         </td>
         <td>${e.executor || ''}</td>
         <td style="font-size:12px;color:#6b7a8a">
@@ -798,12 +882,21 @@ function renderAdminPage() {
   Object.keys(users).forEach(e => {
     const u = users[e];
     const tr = document.createElement('tr');
+    
+    // Thay đổi logic hiển thị checkbox
+    const allowSaveChecked = (u.allowSave !== false) ? 'checked' : '';
+    const allowLoginChecked = (u.role === 'client') 
+      ? ((u.allowLogin === true) ? 'checked' : '')  // Client: mặc định KHÔNG tích
+      : ((u.allowLogin !== false) ? 'checked' : ''); // Admin: mặc định tích
+    
     tr.innerHTML = `<td>${e}</td><td>${u.scientist_name || ''}</td><td>${u.role}</td>
-                    <td><input type="checkbox" ${u.allowSave !== false ? 'checked' : ''} data-email="${e}" data-action="save"></td>
-                    <td><input type="checkbox" ${u.allowLogin !== false ? 'checked' : ''} data-email="${e}" data-action="login"></td>`;
+                    <td><input type="checkbox" ${allowSaveChecked} data-email="${e}" data-action="save"></td>
+                    <td><input type="checkbox" ${allowLoginChecked} data-email="${e}" data-action="login"></td>`;
     t.appendChild(tr);
   });
   main.appendChild(t);
+  
+  // Phần xử lý checkbox giữ nguyên
   t.querySelectorAll('input[type=checkbox]').forEach(cb => {
     cb.onchange = () => {
       const users = JSON.parse(localStorage.getItem('users') || '{}');
@@ -819,7 +912,6 @@ function renderAdminPage() {
         localStorage.setItem('users', JSON.stringify(users));
         alert('Đã cập nhật quyền đăng nhập cho ' + cb.dataset.email);
         
-        // Nếu bỏ quyền đăng nhập và đó là user hiện tại, đăng xuất
         const cur = getCurrentUser();
         if (!cb.checked && cur && cur.email === cb.dataset.email) {
           alert('Tài khoản của bạn đã bị vô hiệu hóa. Bạn sẽ bị đăng xuất.');

@@ -137,7 +137,9 @@
             scientist_code: scientist_code,
             scientist_name: scientist_name,
             password: password,
-            role: regRole
+            role: regRole,
+            allowSave: true,
+            allowLogin: regRole === 'admin' ? true : false  // Client mặc định KHÔNG cho đăng nhập
         };
 
         // Lưu vào localStorage
