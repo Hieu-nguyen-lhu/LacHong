@@ -1,70 +1,241 @@
 /* ==============================================
    app.js - Toàn bộ logic của website quản lý tài liệu
-   Phiên bản: 2025-10 (Người thực hiện + combobox + accordion)
+   Phiên bản: 2025-10 (IndexedDB + Người thực hiện + combobox + accordion)
    ============================================== */
 
-const TYPES = ['totrinh', 'quyetdinh', 'khenthuong', 'baocao', 'banhanh'];
+const TYPES = ['totrinh', 'quyetdinh', 'khenthuong', 'baocao'];
 const TYPE_LABEL = {
   totrinh: 'Tờ trình',
   quyetdinh: 'Quyết định',
   khenthuong: 'Khen thưởng',
   baocao: 'Báo cáo',
-  banhanh: 'Ban hành'
 };
 
-// ======= Helper =======
-function uid() { return 'id_' + Math.random().toString(36).slice(2, 9); }
+// ======= Helper với IndexedDB =======
+const DB_NAME = 'DocumentDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'documents';
 
-function fileToBase64(file) {
+function uid() { 
+  return 'id_' + Math.random().toString(36).slice(2, 9) + Date.now(); 
+}
+
+// Khởi tạo IndexedDB
+function initDB() {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (e) => reject(e);
-    reader.readAsDataURL(file);
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        store.createIndex('type', 'type', { unique: false });
+        store.createIndex('no', 'no', { unique: false });
+        store.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+    };
   });
 }
 
+// Lưu document (THAY THẾ localStorage)
 async function saveDoc(type, no, note, executor, file, currentUser, banhanhFile = null) {
-  const docs = JSON.parse(localStorage.getItem('docs') || '{}');
-  const list = docs[type] || [];
-  const entry = {
-    id: uid(),
-    no,
-    note,
-    executor,
-    filename: file ? file.name : '',
-    filetype: file ? file.type : '',
-    filedata: file ? await fileToBase64(file) : null,
-    banhanhFilename: banhanhFile ? banhanhFile.name : '',
-    banhanhFiletype: banhanhFile ? banhanhFile.type : '',
-    banhanhFiledata: banhanhFile ? await fileToBase64(banhanhFile) : null,
-    createdAt: new Date().toISOString(),
-    authorEmail: currentUser ? currentUser.email : 'anonymous'
-  };
-  list.unshift(entry);
-  docs[type] = list;
-  localStorage.setItem('docs', JSON.stringify(docs));
-  return entry;
+  try {
+    const db = await initDB();
+    
+    const entry = {
+      id: uid(),
+      type: type,
+      no: no,
+      note: note,
+      executor: executor,
+      filename: file ? file.name : '',
+      filetype: file ? file.type : '',
+      filesize: file ? file.size : 0,
+      fileBlob: file || null, // Lưu trực tiếp File object
+      banhanhFilename: banhanhFile ? banhanhFile.name : '',
+      banhanhFiletype: banhanhFile ? banhanhFile.type : '',
+      banhanhFilesize: banhanhFile ? banhanhFile.size : 0,
+      banhanhFileBlob: banhanhFile || null,
+      createdAt: new Date().toISOString(),
+      authorEmail: currentUser ? currentUser.email : 'anonymous'
+    };
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.add(entry);
+      
+      request.onsuccess = () => resolve(entry);
+      request.onerror = () => {
+        if (request.error.name === 'QuotaExceededError') {
+          reject(new Error('Bộ nhớ đã đầy! Vui lòng xóa bớt tài liệu cũ.'));
+        } else {
+          reject(request.error);
+        }
+      };
+    });
+  } catch (e) {
+    console.error('Lỗi saveDoc:', e);
+    throw e;
+  }
 }
 
-function downloadEntry(entry, isBanhanh = false) {
-  if (isBanhanh) {
-    if (!entry || !entry.banhanhFiledata) return alert('Không có file ban hành để tải xuống.');
-    const a = document.createElement('a');
-    a.href = entry.banhanhFiledata;
-    a.download = entry.banhanhFilename || 'banhanh';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } else {
-    if (!entry || !entry.filedata) return alert('Không có file để tải xuống.');
-    const a = document.createElement('a');
-    a.href = entry.filedata;
-    a.download = entry.filename || 'download';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+// Lấy tất cả documents theo type
+async function getDocsByType(type) {
+  try {
+    const db = await initDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const index = store.index('type');
+      const request = index.getAll(type);
+      
+      request.onsuccess = () => {
+        const results = request.result.sort((a, b) => 
+          new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        resolve(results);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error('Lỗi getDocsByType:', e);
+    return [];
   }
+}
+
+// Lấy tất cả documents (tất cả loại)
+async function getAllDocs() {
+  try {
+    const db = await initDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.getAll();
+      
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error('Lỗi getAllDocs:', e);
+    return [];
+  }
+}
+
+// Lấy một document theo ID
+async function getDocById(id) {
+  try {
+    const db = await initDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get(id);
+      
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error('Lỗi getDocById:', e);
+    return null;
+  }
+}
+
+// Xóa document
+async function deleteDocFromDB(id) {
+  try {
+    const db = await initDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(id);
+      
+      request.onsuccess = () => resolve(true);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error('Lỗi deleteDocFromDB:', e);
+    throw e;
+  }
+}
+
+// Cập nhật document (xóa file ban hành)
+async function updateDoc(id, updates) {
+  try {
+    const db = await initDB();
+    const entry = await getDocById(id);
+    if (!entry) throw new Error('Không tìm thấy tài liệu');
+    
+    const updatedEntry = { ...entry, ...updates };
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.put(updatedEntry);
+      
+      request.onsuccess = () => resolve(updatedEntry);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error('Lỗi updateDoc:', e);
+    throw e;
+  }
+}
+
+// Download file (THAY THẾ downloadEntry cũ)
+async function downloadEntry(entryOrId, isBanhanh = false) {
+  try {
+    let entry;
+    if (typeof entryOrId === 'string') {
+      entry = await getDocById(entryOrId);
+    } else {
+      entry = entryOrId;
+    }
+    
+    if (!entry) return alert('Không tìm thấy tài liệu.');
+    
+    const blob = isBanhanh ? entry.banhanhFileBlob : entry.fileBlob;
+    const filename = isBanhanh ? entry.banhanhFilename : entry.filename;
+    
+    if (!blob) return alert('Không có file để tải xuống.');
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'download';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Lỗi khi tải file: ' + e.message);
+  }
+}
+
+// Kiểm tra dung lượng
+async function checkStorageQuota() {
+  if (navigator.storage && navigator.storage.estimate) {
+    const estimate = await navigator.storage.estimate();
+    const usedMB = (estimate.usage / 1024 / 1024).toFixed(2);
+    const quotaMB = (estimate.quota / 1024 / 1024).toFixed(2);
+    const percentUsed = ((estimate.usage / estimate.quota) * 100).toFixed(2);
+    
+    return {
+      used: estimate.usage,
+      quota: estimate.quota,
+      available: estimate.quota - estimate.usage,
+      usedMB,
+      quotaMB,
+      percentUsed
+    };
+  }
+  return null;
 }
 
 function getCurrentUser() {
@@ -136,69 +307,68 @@ function createExecutorCombobox() {
   dropdown.style.display = 'none';
   dropdown.style.zIndex = '1000';
   
-  // Thêm vào trong hàm createExecutorCombobox(), sau phần updateDropdown
-const updateDropdown = () => {
-  dropdown.innerHTML = '';
-  const executors = getExecutors();
-  executors.forEach(name => {
-    const item = document.createElement('div');
-    item.style.display = 'flex';
-    item.style.justifyContent = 'space-between';
-    item.style.alignItems = 'center';
-    item.style.padding = '10px 12px';
-    item.style.cursor = 'pointer';
-    item.style.borderBottom = '1px solid #f0f5ff';
-    item.style.fontSize = '14px';
-    
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = name;
-    nameSpan.style.flex = '1';
-    
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '✕';
-    deleteBtn.style.background = 'transparent';
-    deleteBtn.style.border = 'none';
-    deleteBtn.style.color = '#ff4444';
-    deleteBtn.style.cursor = 'pointer';
-    deleteBtn.style.padding = '0 8px';
-    deleteBtn.style.fontSize = '16px';
-    deleteBtn.style.fontWeight = 'bold';
-    deleteBtn.style.opacity = '0';
-    deleteBtn.style.transition = 'opacity 0.2s';
-    
-    item.onmouseover = () => {
-      item.style.background = '#f0f5ff';
-      deleteBtn.style.opacity = '1';
-    };
-    item.onmouseout = () => {
-      item.style.background = '#fff';
+  const updateDropdown = () => {
+    dropdown.innerHTML = '';
+    const executors = getExecutors();
+    executors.forEach(name => {
+      const item = document.createElement('div');
+      item.style.display = 'flex';
+      item.style.justifyContent = 'space-between';
+      item.style.alignItems = 'center';
+      item.style.padding = '10px 12px';
+      item.style.cursor = 'pointer';
+      item.style.borderBottom = '1px solid #f0f5ff';
+      item.style.fontSize = '14px';
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = name;
+      nameSpan.style.flex = '1';
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '✕';
+      deleteBtn.style.background = 'transparent';
+      deleteBtn.style.border = 'none';
+      deleteBtn.style.color = '#ff4444';
+      deleteBtn.style.cursor = 'pointer';
+      deleteBtn.style.padding = '0 8px';
+      deleteBtn.style.fontSize = '16px';
+      deleteBtn.style.fontWeight = 'bold';
       deleteBtn.style.opacity = '0';
-    };
-    
-    nameSpan.onclick = () => {
-      input.value = name;
-      dropdown.style.display = 'none';
-      input.focus();
-    };
-    
-    deleteBtn.onclick = (e) => {
-      e.stopPropagation();
-      if (confirm(`Xóa "${name}" khỏi danh sách?`)) {
-        const executors = getExecutors();
-        const updated = executors.filter(n => n !== name);
-        saveExecutors(updated);
-        updateDropdown();
-        if (input.value === name) {
-          input.value = '';
+      deleteBtn.style.transition = 'opacity 0.2s';
+      
+      item.onmouseover = () => {
+        item.style.background = '#f0f5ff';
+        deleteBtn.style.opacity = '1';
+      };
+      item.onmouseout = () => {
+        item.style.background = '#fff';
+        deleteBtn.style.opacity = '0';
+      };
+      
+      nameSpan.onclick = () => {
+        input.value = name;
+        dropdown.style.display = 'none';
+        input.focus();
+      };
+      
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (confirm(`Xóa "${name}" khỏi danh sách?`)) {
+          const executors = getExecutors();
+          const updated = executors.filter(n => n !== name);
+          saveExecutors(updated);
+          updateDropdown();
+          if (input.value === name) {
+            input.value = '';
+          }
         }
-      }
-    };
-    
-    item.appendChild(nameSpan);
-    item.appendChild(deleteBtn);
-    dropdown.appendChild(item);
-  });
-};
+      };
+      
+      item.appendChild(nameSpan);
+      item.appendChild(deleteBtn);
+      dropdown.appendChild(item);
+    });
+  };
   
   updateDropdown();
   container.appendChild(input);
@@ -313,7 +483,6 @@ function createRowCard(type) {
   noteInput.className = 'note-input';
   noteInput.placeholder = 'Nội dung...';
   
-  
   const executorContainer = document.createElement('div');
   executorContainer.className = 'executor-container';
   const executorCombo = createExecutorCombobox();
@@ -390,10 +559,19 @@ function createRowCard(type) {
     if (!no) return alert('Vui lòng nhập số thứ tự!');
     if (!f) return alert('Vui lòng chọn tệp đính kèm!');
 
-    const docs = JSON.parse(localStorage.getItem('docs') || '{}');
-    const list = docs[type] || [];
-    if (list.some(entry => entry.no === no)) {
+    // Kiểm tra trùng số TT từ IndexedDB
+    const existingDocs = await getDocsByType(type);
+    if (existingDocs.some(entry => entry.no === no)) {
       return alert(`Số thứ tự "${no}" đã tồn tại trong hệ thống. Vui lòng sử dụng số thứ tự khác!`);
+    }
+
+    // Kiểm tra kích thước file (GIỚI HẠN 50MB)
+    const MAX_SIZE = 50 * 1024 * 1024;
+    if (f.size > MAX_SIZE) {
+      return alert(`File "${f.name}" quá lớn (${Math.round(f.size / 1024 / 1024)}MB).\nVui lòng chọn file nhỏ hơn 50MB.`);
+    }
+    if (banhanhFile && banhanhFile.size > MAX_SIZE) {
+      return alert(`File ban hành quá lớn (${Math.round(banhanhFile.size / 1024 / 1024)}MB).\nVui lòng chọn file nhỏ hơn 50MB.`);
     }
 
     if (type === 'banhanh' && f && !f.name.toLowerCase().endsWith('.pdf'))
@@ -404,14 +582,20 @@ function createRowCard(type) {
     if (banhanhFile && !banhanhFile.name.toLowerCase().endsWith('.pdf'))
       return alert('File ban hành chỉ chấp nhận định dạng PDF');
 
-    await saveDoc(type, no, note, executor, f, cur, banhanhFile);
-    alert('Đã lưu thành công!');
-    fileInput.value = '';
-    fileHint.textContent = '';
-    banhanhFileInput.value = '';
-    banhanhFileHint.textContent = '';
-    executorCombo.clearExecutor();
-    if (currentRoute === 'luutru') renderArchive();
+    try {
+      await saveDoc(type, no, note, executor, f, cur, banhanhFile);
+      alert('Đã lưu thành công!');
+      noInput.value = '';
+      noteInput.value = '';
+      fileInput.value = '';
+      fileHint.textContent = '';
+      banhanhFileInput.value = '';
+      banhanhFileHint.textContent = '';
+      executorCombo.clearExecutor();
+      if (currentRoute === 'luutru') renderArchive();
+    } catch (e) {
+      alert('Lỗi khi lưu: ' + e.message);
+    }
   };
 
   return div;
@@ -499,10 +683,11 @@ function renderBanhanhPage() {
   
   const cur = getCurrentUser();
 
-  const renderContent = (selectedType, searchQuery = '') => {
+  const renderContent = async (selectedType, searchQuery = '') => {
     contentArea.innerHTML = '';
     
-    const docs = JSON.parse(localStorage.getItem('docs') || '{}');
+    // Lấy dữ liệu từ IndexedDB
+    const list = await getDocsByType(selectedType);
     
     // Cập nhật active tab
     tabsContainer.querySelectorAll('button').forEach(btn => {
@@ -517,10 +702,8 @@ function renderBanhanhPage() {
       }
     });
     
-    const list = docs[selectedType] || [];
-    
     // Chỉ lấy các tài liệu có file ban hành
-    let filteredList = list.filter(e => e.banhanhFilename && e.banhanhFiledata);
+    let filteredList = list.filter(e => e.banhanhFilename && e.banhanhFileBlob);
     
     // Lọc theo search query
     if (searchQuery.trim() !== '') {
@@ -576,12 +759,13 @@ function renderBanhanhPage() {
 
     const table = document.createElement('table');
     table.className = 'archive-table';
-    table.innerHTML = '<tr><th>Số TT</th><th>Văn bản ban hành</th><th>Ngày</th></tr>';
+    table.innerHTML = '<tr><th>Số TT</th><th>Nội dung</th><th>Văn bản ban hành</th><th>Ngày</th></tr>';
 
     filteredList.forEach(e => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight:600;color:#005F9E">${e.no || ''}</td>
+        <td>${e.note || ''}</td>
         <td>
           <span style="color:#005F9E;font-weight:600;">${e.banhanhFilename}</span><br>
           <button class="btn" style="color:white;background:#007BFF;margin-top:4px" data-action="download-banhanh" data-type="${selectedType}" data-id="${e.id}">Tải xuống</button>
@@ -602,27 +786,21 @@ function renderBanhanhPage() {
     };
 
     table.querySelectorAll('button[data-id]').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const id = btn.dataset.id;
-        const type = btn.dataset.type;
         const action = btn.dataset.action;
-        const docs = JSON.parse(localStorage.getItem('docs') || '{}');
-        const list = docs[type] || [];
-        const entry = list.find(x => x.id === id);
+        const entry = await getDocById(id);
         
         if (action === 'download-banhanh') {
-          downloadEntry(entry, true);
+          downloadEntry(id, true);
         } else if (action === 'delete-banhanh') {
           if (confirm(`Xóa file ban hành "${entry.banhanhFilename}"?\n\nLưu ý: Chỉ xóa file ban hành, tài liệu gốc vẫn còn.`)) {
-            // Chỉ xóa file ban hành, giữ lại tài liệu
-            entry.banhanhFilename = '';
-            entry.banhanhFiletype = '';
-            entry.banhanhFiledata = null;
-            
-            // Cập nhật lại localStorage
-            const updated = list.map(x => x.id === id ? entry : x);
-            docs[type] = updated;
-            localStorage.setItem('docs', JSON.stringify(docs));
+            await updateDoc(id, {
+              banhanhFilename: '',
+              banhanhFiletype: '',
+              banhanhFilesize: 0,
+              banhanhFileBlob: null
+            });
             
             // Render lại
             renderContent(selectedType, searchInput.value);
@@ -710,11 +888,11 @@ function renderArchive() {
   
   const cur = getCurrentUser();
 
-  const renderContent = (selectedType, searchQuery = '') => {
+  const renderContent = async (selectedType, searchQuery = '') => {
     contentArea.innerHTML = '';
     
-    // Load lại dữ liệu mỗi lần render
-    const docs = JSON.parse(localStorage.getItem('docs') || '{}');
+    // Load dữ liệu từ IndexedDB
+    const list = await getDocsByType(selectedType);
     
     // Cập nhật active tab
     tabsContainer.querySelectorAll('button').forEach(btn => {
@@ -728,9 +906,14 @@ function renderArchive() {
         btn.dataset.active = 'false';
       }
     });
-    
-    const list = docs[selectedType] || [];
-    
+
+    // Tính số lượng tài liệu theo người thực hiện
+    const executorStats = {};
+    list.forEach(e => {
+      const executor = (e.executor || 'Chưa phân công').trim();
+      executorStats[executor] = (executorStats[executor] || 0) + 1;
+    });
+
     // Lọc theo search query
     let filteredList = list;
     if (searchQuery.trim() !== '') {
@@ -760,8 +943,40 @@ function renderArchive() {
     headerContainer.style.userSelect = 'none';
     
     const titleDiv = document.createElement('div');
-    titleDiv.innerHTML = `<h3 style="margin:0;font-size:16px;color:#005F9E">📄 ${TYPE_LABEL[selectedType]}</h3>
-                          <div style="font-size:13px;color:#6b7a8a;margin-top:4px">Tổng số: ${filteredList.length}</div>`;
+    titleDiv.style.display = 'flex';
+    titleDiv.style.flexDirection = 'column';
+    titleDiv.style.width = '100%';
+
+    const mainTitle = document.createElement('h3');
+    mainTitle.style.margin = '0';
+    mainTitle.style.fontSize = '16px';
+    mainTitle.style.color = '#005F9E';
+    mainTitle.textContent = `📄 ${TYPE_LABEL[selectedType]}`;
+
+    const totalInfo = document.createElement('div');
+    totalInfo.style.fontSize = '13px';
+    totalInfo.style.color = '#6b7a8a';
+    totalInfo.style.marginTop = '4px';
+    totalInfo.textContent = `Tổng số: ${filteredList.length}`;
+
+    const statsInfo = document.createElement('div');
+    statsInfo.style.fontSize = '13px';
+    statsInfo.style.color = '#6b7a8a';
+    statsInfo.style.marginTop = '4px';
+
+    const statsEntries = Object.entries(executorStats)
+      .sort((a, b) => b[1] - a[1]); // Sắp xếp theo số lượng giảm dần
+
+    if (statsEntries.length > 0) {
+      statsInfo.textContent = 'Thống kê theo người: ' + 
+        statsEntries.map(([name, count]) => `${name}: ${count}`).join(', ');
+    }
+
+    titleDiv.appendChild(mainTitle);
+    titleDiv.appendChild(totalInfo);
+    if (statsEntries.length > 0) {
+      titleDiv.appendChild(statsInfo);
+    }
     
     const arrow = document.createElement('span');
     arrow.textContent = '▼';
@@ -830,21 +1045,16 @@ function renderArchive() {
     };
 
     table.querySelectorAll('button[data-id]').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const id = btn.dataset.id;
-        const type = btn.dataset.type;
         const action = btn.dataset.action;
-        const docs = JSON.parse(localStorage.getItem('docs') || '{}');
-        const list = docs[type] || [];
-        const entry = list.find(x => x.id === id);
+        const entry = await getDocById(id);
 
-        if (action === 'download') downloadEntry(entry);
-        else if (action === 'download-banhanh') downloadEntry(entry, true);
+        if (action === 'download') downloadEntry(id);
+        else if (action === 'download-banhanh') downloadEntry(id, true);
         else if (action === 'delete') {
           if (confirm(`Xóa "${entry.filename}"?`)) {
-            const updated = list.filter(x => x.id !== id);
-            docs[type] = updated;
-            localStorage.setItem('docs', JSON.stringify(docs));
+            await deleteDocFromDB(id);
             renderContent(selectedType, searchInput.value);
           }
         }
