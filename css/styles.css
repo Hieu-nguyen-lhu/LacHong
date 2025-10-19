@@ -1,5 +1,5 @@
 /* ==============================================
-   styles.css - Hoàn chỉnh với form nhập đẹp
+   styles.css - Hoàn chỉnh với form nhập đẹp + Năm + Ghi chú Admin
    ============================================== */
 
 *{
@@ -42,8 +42,8 @@ html,body{
 }
 
 .brand img{
-  height:40px;
-  width:40px;
+  height:80px;
+  width:100px;
   object-fit:contain;
   border-radius:6px;
   background:#fff;
@@ -98,7 +98,7 @@ html,body{
   padding:24px;
 }
 
-/* ===== FORM ROW CARD - 3 Ô CÙNG 1 HÀNG ===== */
+/* ===== FORM ROW CARD - 3 Ô (Note + Executor + Year) ===== */
 .row-card{
   background:#ffffff;
   border:1px solid #d8e7ff;
@@ -114,10 +114,10 @@ html,body{
   border-color:#005F9E;
 }
 
-/* Hàng 1: 3 ô input cùng 1 hàng (Grid layout) */
+/* Hàng 1: 3 ô - note, executor, year */
 .row-card-row-1{
   display:grid;
-  grid-template-columns:100px 1fr 220px;
+  grid-template-columns:1fr 220px 100px;
   gap:12px;
   margin-bottom:16px;
   align-items:start;
@@ -146,9 +146,9 @@ html,body{
 }
 
 /* Input chung */
-.no-input,
 .note-input,
 .executor-input,
+.year-input,
 .file-input,
 .banhanh-file-input{
   width:100%;
@@ -159,10 +159,6 @@ html,body{
   font-family:inherit;
   transition:all 0.2s ease;
   background:white;
-}
-
-.no-input{
-  height:40px;
 }
 
 .note-input{
@@ -177,9 +173,16 @@ html,body{
   height:40px;
 }
 
-.no-input:focus,
+.year-input{
+  height:40px;
+  text-align:center;
+  font-weight:600;
+  color:#005F9E;
+}
+
 .note-input:focus,
 .executor-input:focus,
+.year-input:focus,
 .file-input:focus,
 .banhanh-file-input:focus{
   outline:none;
@@ -189,6 +192,12 @@ html,body{
 
 /* Executor combobox container */
 .executor-container{
+  position:relative;
+  width:100%;
+}
+
+/* Year container */
+.year-container{
   position:relative;
   width:100%;
 }
@@ -307,6 +316,7 @@ html,body{
 .archive-table td{
   padding:10px;
   border-bottom:1px solid #eef6ff;
+  vertical-align:top;
 }
 
 .archive-table tr:hover{
@@ -317,6 +327,31 @@ html,body{
   color:#8a99b2;
   font-style:italic;
   padding:10px;
+}
+
+/* ===== ADMIN NOTE INPUT ===== */
+.admin-note-input{
+  width:100%;
+  min-height:50px;
+  padding:6px 8px;
+  border:1px solid #d8e7ff;
+  border-radius:6px;
+  font-size:13px;
+  resize:vertical;
+  font-family:inherit;
+  line-height:1.4;
+  transition:all 0.2s ease;
+}
+
+.admin-note-input:focus{
+  outline:none;
+  border-color:#005F9E;
+  box-shadow:0 0 0 2px rgba(0,95,158,0.1);
+}
+
+.admin-note-input::placeholder{
+  color:#a0b0c5;
+  font-style:italic;
 }
 
 /* ===== USER MANAGEMENT ===== */
@@ -352,7 +387,11 @@ html,body{
     padding:16px;
   }
 
-  .row-card-row-1,
+  .row-card-row-1{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+
   .row-card-row-2{
     grid-template-columns:1fr;
     gap:12px;
@@ -370,4 +409,137 @@ html,body{
   .navbar{
     overflow:auto;
   }
+
+  .archive-table{
+    font-size:12px;
+  }
+
+  .archive-table th,
+  .archive-table td{
+    padding:8px 6px;
+  }
+
+  .admin-note-input{
+    font-size:12px;
+    min-height:40px;
+  }
 }
+
+/* ===== SCROLLBAR STYLING ===== */
+.admin-note-input::-webkit-scrollbar{
+  width:8px;
+}
+
+.admin-note-input::-webkit-scrollbar-track{
+  background:#f0f5ff;
+  border-radius:4px;
+}
+
+.admin-note-input::-webkit-scrollbar-thumb{
+  background:#b8d0e8;
+  border-radius:4px;
+}
+
+.admin-note-input::-webkit-scrollbar-thumb:hover{
+  background:#9ab8d6;
+}
+
+/* ===== TABLE IMPROVEMENTS ===== */
+.archive-table td:nth-child(1){
+  font-weight:600;
+  color:#005F9E;
+  min-width:60px;
+}
+
+.archive-table td:nth-child(6){
+  text-align:center;
+  font-weight:600;
+  color:#005F9E;
+  min-width:60px;
+}
+
+.archive-table td:nth-child(8){
+  min-width:200px;
+  max-width:300px;
+}
+
+/* ===== ADDITIONAL POLISH ===== */
+h2{
+  color:#005F9E;
+  margin-bottom:20px;
+  font-size:24px;
+  font-weight:700;
+}
+
+::placeholder{
+  color:#a0b0c5;
+}
+
+/* Input number arrows styling */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{
+  opacity:1;
+  cursor:pointer;
+}
+
+/* Smooth transitions */
+*{
+  transition:background-color 0.2s ease, 
+             border-color 0.2s ease, 
+             color 0.2s ease;
+}
+
+button,
+input,
+textarea{
+  transition:all 0.2s ease;
+}
+
+/* Focus visible for accessibility */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible{
+  outline:2px solid #005F9E;
+  outline-offset:2px;
+}
+
+/* ===== ARCHIVE TABLE - FILE NAME STYLING ===== */
+.archive-table td span[style*="font-weight:600"]{
+  font-size:13px !important;
+  font-weight:500 !important;
+  color:#0066cc !important;
+  display:block;
+  margin-bottom:6px;
+  line-height:1.3;
+  word-break:break-word;
+}
+
+/* Tất cả headers không xuống dòng */
+.archive-table th{
+  white-space:nowrap;
+}
+
+/* ===== NÚT XUẤT EXCEL ===== */
+.excel-export-btn{
+  padding:6px 10px !important;
+  border-radius:8px !important;
+  background:#107C41 !important;
+  color:#fff !important;
+  text-decoration:none;
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  transition:all 0.2s ease;
+  margin-left:auto;
+}
+
+.excel-export-btn:hover{
+  background:#0d6636 !important;
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(16,124,65,0.3);
+}
+
+.excel-export-btn img{
+  filter:brightness(0) invert(1);
+}
+

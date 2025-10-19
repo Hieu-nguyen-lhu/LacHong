@@ -1,6 +1,6 @@
 /* ==============================================
    app.js - Toàn bộ logic của website quản lý tài liệu
-   Phiên bản: 2025-10 (IndexedDB + Người thực hiện + combobox + accordion)
+   Phiên bản: 2025-10 (IndexedDB + Người thực hiện + combobox + accordion + Năm + Ghi chú Admin)
    ============================================== */
 
 const TYPES = ['totrinh', 'quyetdinh', 'khenthuong', 'baocao'];
@@ -18,6 +18,11 @@ const STORE_NAME = 'documents';
 
 function uid() { 
   return 'id_' + Math.random().toString(36).slice(2, 9) + Date.now(); 
+}
+
+// Lấy năm hiện tại
+function getCurrentYear() {
+  return new Date().getFullYear();
 }
 
 // Khởi tạo IndexedDB
@@ -41,7 +46,7 @@ function initDB() {
 }
 
 // Lưu document (THAY THẾ localStorage)
-async function saveDoc(type, no, note, executor, file, currentUser, banhanhFile = null) {
+async function saveDoc(type, no, note, executor, file, currentUser, banhanhFile = null, year = null, adminNote = '') {
   try {
     const db = await initDB();
     
@@ -51,6 +56,8 @@ async function saveDoc(type, no, note, executor, file, currentUser, banhanhFile 
       no: no,
       note: note,
       executor: executor,
+      year: year || getCurrentYear(),
+      adminNote: adminNote || '',
       filename: file ? file.name : '',
       filetype: file ? file.type : '',
       filesize: file ? file.size : 0,
@@ -444,6 +451,7 @@ function createExecutorCombobox() {
 function renderMenu(activeKey) {
   const menu = document.getElementById('app-menu');
   menu.innerHTML = '';
+  
   const items = [
     { k: 'totrinh', t: 'Tờ trình' },
     { k: 'quyetdinh', t: 'Quyết định' },
@@ -452,8 +460,10 @@ function renderMenu(activeKey) {
     { k: 'banhanh', t: 'Ban hành' },
     { k: 'luutru', t: 'Lưu trữ' }
   ];
+  
   const cur = getCurrentUser();
   if (cur && cur.role === 'admin') items.push({ k: 'quanly', t: 'Quản lý' });
+  
   items.forEach(it => {
     const a = document.createElement('a');
     a.href = 'javascript:void(0)';
@@ -463,21 +473,31 @@ function renderMenu(activeKey) {
     a.onclick = () => navigateTo(it.k);
     menu.appendChild(a);
   });
+  
+  // THÊM NÚT XUẤT EXCEL
+  const excelBtn = document.createElement('a');
+  excelBtn.href = 'Xuất file excel';
+  excelBtn.className = 'excel-export-btn';
+  excelBtn.innerHTML = `
+    <img src="icons8-excel-50.png"; style="width:20px; height:20px;">
+  `;
+  excelBtn.onclick = exportToExcel;
+  menu.appendChild(excelBtn);
 }
 
-// ======= FORM NHẬP - LAYOUT MỚI 3 Ô CÙNG HÀNG =======
+// ======= FORM NHẬP - LAYOUT MỚI 2 Ô CÙNG HÀNG + NĂM =======
 function createRowCard(type) {
   const div = document.createElement('div');
   div.className = 'row-card';
   
-  // Hàng 1: 3 ô input cùng 1 hàng
+  // Hàng 1: 3 ô - note, executor, year
   const row1 = document.createElement('div');
   row1.className = 'row-card-row-1';
-  
-  const noInput = document.createElement('input');
-  noInput.type = 'number';
-  noInput.className = 'no-input';
-  noInput.placeholder = 'Số thứ tự';
+  row1.style.display = 'grid';
+  row1.style.gridTemplateColumns = '1fr 220px 100px';
+  row1.style.gap = '12px';
+  row1.style.marginBottom = '16px';
+  row1.style.alignItems = 'start';
   
   const noteInput = document.createElement('textarea');
   noteInput.className = 'note-input';
@@ -488,9 +508,28 @@ function createRowCard(type) {
   const executorCombo = createExecutorCombobox();
   executorContainer.appendChild(executorCombo);
   
-  row1.appendChild(noInput);
+  // THÊM Ô NHẬP NĂM
+  const yearContainer = document.createElement('div');
+  yearContainer.className = 'year-container';
+  const yearInput = document.createElement('input');
+  yearInput.type = 'number';
+  yearInput.className = 'year-input';
+  yearInput.placeholder = 'Năm';
+  yearInput.min = '2000';
+  yearInput.max = '2100';
+  yearInput.style.padding = '8px 10px';
+  yearInput.style.borderRadius = '8px';
+  yearInput.style.border = '1px solid #d8e7ff';
+  yearInput.style.fontSize = '14px';
+  yearInput.style.width = '100%';
+  yearInput.style.height = '40px';
+  yearInput.style.boxSizing = 'border-box';
+  yearInput.style.textAlign = 'center';
+  yearContainer.appendChild(yearInput);
+  
   row1.appendChild(noteInput);
   row1.appendChild(executorContainer);
+  row1.appendChild(yearContainer);
   
   // Hàng 2: 2 file đính kèm
   const row2 = document.createElement('div');
@@ -550,20 +589,25 @@ function createRowCard(type) {
     if (!cur) return alert('Chưa đăng nhập.');
     if (!canCurrentUserSave()) return alert('Bạn không có quyền lưu.');
 
-    const no = noInput.value.trim();
     const note = noteInput.value.trim();
     const executor = executorCombo.getExecutor();
+    const year = yearInput.value.trim();
     const f = fileInput.files[0];
     const banhanhFile = banhanhFileInput.files[0];
 
-    if (!no) return alert('Vui lòng nhập số thứ tự!');
     if (!f) return alert('Vui lòng chọn tệp đính kèm!');
+    if (!year) return alert('Vui lòng nhập năm!');
 
-    // Kiểm tra trùng số TT từ IndexedDB
+    // Tự động tạo số thứ tự
     const existingDocs = await getDocsByType(type);
-    if (existingDocs.some(entry => entry.no === no)) {
-      return alert(`Số thứ tự "${no}" đã tồn tại trong hệ thống. Vui lòng sử dụng số thứ tự khác!`);
-    }
+    let maxNo = 0;
+    existingDocs.forEach(doc => {
+      const docNo = parseInt(doc.no);
+      if (!isNaN(docNo) && docNo > maxNo) {
+        maxNo = docNo;
+      }
+    });
+    const no = String(maxNo + 1);
 
     // Kiểm tra kích thước file (GIỚI HẠN 50MB)
     const MAX_SIZE = 50 * 1024 * 1024;
@@ -583,9 +627,8 @@ function createRowCard(type) {
       return alert('File ban hành chỉ chấp nhận định dạng PDF');
 
     try {
-      await saveDoc(type, no, note, executor, f, cur, banhanhFile);
-      alert('Đã lưu thành công!');
-      noInput.value = '';
+      await saveDoc(type, no, note, executor, f, cur, banhanhFile, year);
+      alert(`Đã lưu thành công! Số thứ tự: ${no}`);
       noteInput.value = '';
       fileInput.value = '';
       fileHint.textContent = '';
@@ -1008,28 +1051,39 @@ function renderArchive() {
 
     const table = document.createElement('table');
     table.className = 'archive-table';
-    table.innerHTML = '<tr><th>Số TT</th><th>Nội dung</th><th>Văn bản</th><th>Văn bản ban hành</th><th>Người thực hiện</th><th>Ngày</th></tr>';
+    table.innerHTML = '<tr><th>Số TT</th><th>Nội dung</th><th>Văn bản</th><th>Văn bản ban hành</th><th>Người thực hiện</th><th>Năm</th><th>Ngày</th><th>Ghi chú</th></tr>';
 
     filteredList.forEach(e => {
       const tr = document.createElement('tr');
+      
+      // Tạo ô ghi chú cho admin
+      let adminNoteCell = '';
+      if (cur && cur.role === 'admin') {
+        adminNoteCell = `<td><textarea class="admin-note-input" data-id="${e.id}" style="width:100%;min-height:50px;padding:6px;border:1px solid #d8e7ff;border-radius:6px;font-size:13px;resize:vertical;font-family:inherit" placeholder="Ghi chú...">${e.adminNote || ''}</textarea></td>`;
+      } else {
+        adminNoteCell = `<td style="color:#6b7a8a;font-size:13px">${e.adminNote || ''}</td>`;
+      }
+      
       tr.innerHTML = `
-        <td>${e.no || ''}</td>
+        <td style="font-weight:600;color:#005F9E">${e.no || ''}</td>
         <td>${e.note || ''}</td>
         <td>
-          ${e.filename ? `<span style="color:#005F9E;font-weight:600;">${e.filename}</span><br>` : ''}
+          ${e.filename ? `<span style="color:#0066cc;font-weight:500;font-size:13px;display:block;margin-bottom:4px;line-height:1.3;word-break:break-word;">${e.filename}</span>` : ''}
           <button class="btn" style="color:white;background:#007BFF;margin-top:4px" data-action="download" data-type="${selectedType}" data-id="${e.id}">
             ${e.filename ? 'Tải xuống' : 'Không có file'}
           </button>
         </td>
         <td>
-          ${e.banhanhFilename ? `<span style="color:#005F9E;font-weight:600;">${e.banhanhFilename}</span><br>` : ''}
+          ${e.banhanhFilename ? `<span style="color:#0066cc;font-weight:500;font-size:13px;display:block;margin-bottom:4px;line-height:1.3;word-break:break-word;">${e.banhanhFilename}</span>` : ''}
           ${e.banhanhFilename ? `<button class="btn" style="color:white;background:#007BFF;margin-top:4px" data-action="download-banhanh" data-type="${selectedType}" data-id="${e.id}">Tải xuống</button>` : '<span style="color:#999">Không có file</span>'}
         </td>
         <td>${e.executor || ''}</td>
+        <td style="font-weight:600;color:#005F9E;text-align:center">${e.year || ''}</td>
         <td style="font-size:12px;color:#6b7a8a">
           ${new Date(e.createdAt).toLocaleString()}
           ${cur && cur.role === 'admin' ? `<br><button class="btn btn-ghost" style="margin-top:4px" data-action="delete" data-type="${selectedType}" data-id="${e.id}">Xóa</button>` : ''}
         </td>
+        ${adminNoteCell}
       `;
       table.appendChild(tr);
     });
@@ -1060,6 +1114,21 @@ function renderArchive() {
         }
       };
     });
+
+    // Xử lý lưu ghi chú admin
+    if (cur && cur.role === 'admin') {
+      table.querySelectorAll('.admin-note-input').forEach(textarea => {
+        textarea.addEventListener('blur', async () => {
+          const id = textarea.dataset.id;
+          const adminNote = textarea.value.trim();
+          try {
+            await updateDoc(id, { adminNote });
+          } catch (e) {
+            alert('Lỗi khi lưu ghi chú: ' + e.message);
+          }
+        });
+      });
+    }
   };
   
   // Mặc định hiển thị tab đầu tiên
@@ -1168,4 +1237,64 @@ function initAdminUI() {
   document.getElementById('btn-logout').onclick = () => { localStorage.removeItem('currentUser'); location = 'index.html'; };
 }
 
-window.app = { initClientUI, initAdminUI, navigateTo };
+// ======= XUẤT EXCEL =======
+async function exportToExcel() {
+  try {
+    // Tạo workbook mới
+    const wb = XLSX.utils.book_new();
+    
+    // Duyệt qua từng loại tài liệu
+    for (const type of TYPES) {
+      const docs = await getDocsByType(type);
+      
+      // Tạo dữ liệu cho sheet
+      const sheetData = [
+        ['STT', 'Nội dung', 'Văn bản', 'Văn bản ban hành', 'Người thực hiện', 'Năm văn bản', 'Ngày lưu']
+      ];
+      
+      docs.forEach((doc, index) => {
+        const createdDate = new Date(doc.createdAt);
+        const dateStr = createdDate.toLocaleDateString('vi-VN') + ' ' + createdDate.toLocaleTimeString('vi-VN');
+        
+        sheetData.push([
+          doc.no || '',
+          doc.note || '',
+          doc.filename || '',
+          doc.banhanhFilename || '',
+          doc.executor || '',
+          doc.year || '',
+          dateStr
+        ]);
+      });
+      
+      // Tạo worksheet
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      
+      // Điều chỉnh độ rộng cột
+      ws['!cols'] = [
+        { wch: 8 },   // STT
+        { wch: 30 },  // Nội dung
+        { wch: 40 },  // Văn bản
+        { wch: 40 },  // Văn bản ban hành
+        { wch: 20 },  // Người thực hiện
+        { wch: 12 },  // Năm
+        { wch: 18 }   // Ngày lưu
+      ];
+      
+      // Thêm worksheet vào workbook
+      XLSX.utils.book_append_sheet(wb, ws, TYPE_LABEL[type]);
+    }
+    
+    // Xuất file
+    const today = new Date();
+    const filename = `TaiLieu_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    
+    alert('Xuất Excel thành công!');
+  } catch (e) {
+    console.error('Lỗi xuất Excel:', e);
+    alert('Lỗi khi xuất Excel: ' + e.message);
+  }
+}
+
+window.app = { initClientUI, initAdminUI, navigateTo, exportToExcel };
