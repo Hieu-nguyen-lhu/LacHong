@@ -538,3 +538,15 @@ textarea:focus-visible{
   filter:brightness(0) invert(1);
 }
 
+/* Charts responsive */
+#chart1, #chart2 {
+  max-width: 100%;
+  height: auto !important;
+}
+
+@media(max-width:768px) {
+  #chart1, #chart2 {
+    max-height: 300px !important;
+  }
+}
+

@@ -464,7 +464,7 @@ function renderMenu(activeKey) {
   
   // CHỈ ADMIN MỚI THẤY "LƯU TRỮ"
   if (cur && cur.role === 'admin') {
-    items.push({ k: 'luutru', t: 'Lưu trữ' },{ k: 'banhanh', t: 'Ban hành' });
+    items.push({ k: 'banhanh', t: 'Ban hành' },{ k: 'luutru', t: 'Lưu trữ' },{ k: 'thongke', t: 'Thống kê' });
   }
   
   if (cur && cur.role === 'admin') items.push({ k: 'quanly', t: 'Quản lý' });
@@ -1209,13 +1209,264 @@ function renderAdminPage() {
   });
 }
 
+// ======= TRANG THỐNG KÊ =======
+function renderThongKePage() {
+  const main = document.getElementById('app-content');
+  main.innerHTML = '<h2>Thống kê tài liệu</h2>';
+  
+  // Phần nhập năm
+  const yearFilterDiv = document.createElement('div');
+  yearFilterDiv.style.marginBottom = '30px';
+  yearFilterDiv.style.padding = '20px';
+  yearFilterDiv.style.background = '#f0f5ff';
+  yearFilterDiv.style.borderRadius = '10px';
+  yearFilterDiv.style.display = 'flex';
+  yearFilterDiv.style.gap = '12px';
+  yearFilterDiv.style.alignItems = 'center';
+  
+  const yearLabel = document.createElement('label');
+  yearLabel.textContent = 'Chọn năm:';
+  yearLabel.style.fontWeight = '600';
+  yearLabel.style.color = '#005F9E';
+  yearLabel.style.fontSize = '15px';
+  
+  const yearSelect = document.createElement('select');
+  yearSelect.style.padding = '10px 16px';
+  yearSelect.style.borderRadius = '8px';
+  yearSelect.style.border = '1px solid #d8e7ff';
+  yearSelect.style.fontSize = '14px';
+  yearSelect.style.fontWeight = '600';
+  yearSelect.style.color = '#005F9E';
+  yearSelect.style.cursor = 'pointer';
+  yearSelect.style.minWidth = '120px';
+  
+  // Tạo options cho select (từ 2020 đến năm hiện tại + 1)
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear + 1; y >= 2020; y--) {
+    const option = document.createElement('option');
+    option.value = y;
+    option.textContent = y;
+    if (y === currentYear) option.selected = true;
+    yearSelect.appendChild(option);
+  }
+  
+  yearFilterDiv.appendChild(yearLabel);
+  yearFilterDiv.appendChild(yearSelect);
+  main.appendChild(yearFilterDiv);
+  
+  // Container cho 2 biểu đồ
+  const chartsContainer = document.createElement('div');
+  chartsContainer.style.display = 'grid';
+  chartsContainer.style.gridTemplateColumns = '1fr';
+  chartsContainer.style.gap = '30px';
+  
+  // Biểu đồ 1: Số lượng theo loại tài liệu
+  const chart1Container = document.createElement('div');
+  chart1Container.style.background = '#fff';
+  chart1Container.style.padding = '24px';
+  chart1Container.style.borderRadius = '12px';
+  chart1Container.style.border = '1px solid #d8e7ff';
+  chart1Container.style.boxShadow = '0 2px 8px rgba(0,95,158,0.08)';
+  
+  const chart1Title = document.createElement('h3');
+  chart1Title.textContent = 'Số lượng tài liệu theo loại';
+  chart1Title.style.color = '#005F9E';
+  chart1Title.style.marginBottom = '20px';
+  chart1Title.style.fontSize = '18px';
+  chart1Container.appendChild(chart1Title);
+  
+  const chart1Canvas = document.createElement('canvas');
+  chart1Canvas.id = 'chart1';
+  chart1Canvas.style.maxHeight = '400px';
+  chart1Container.appendChild(chart1Canvas);
+  
+  // Biểu đồ 2: Số lượng theo người thực hiện
+  const chart2Container = document.createElement('div');
+  chart2Container.style.background = '#fff';
+  chart2Container.style.padding = '24px';
+  chart2Container.style.borderRadius = '12px';
+  chart2Container.style.border = '1px solid #d8e7ff';
+  chart2Container.style.boxShadow = '0 2px 8px rgba(0,95,158,0.08)';
+  
+  const chart2Title = document.createElement('h3');
+  chart2Title.textContent = 'Số lượng tài liệu theo người thực hiện';
+  chart2Title.style.color = '#005F9E';
+  chart2Title.style.marginBottom = '20px';
+  chart2Title.style.fontSize = '18px';
+  chart2Container.appendChild(chart2Title);
+  
+  const chart2Canvas = document.createElement('canvas');
+  chart2Canvas.id = 'chart2';
+  chart2Canvas.style.maxHeight = '400px';
+  chart2Container.appendChild(chart2Canvas);
+  
+  chartsContainer.appendChild(chart1Container);
+  chartsContainer.appendChild(chart2Container);
+  main.appendChild(chartsContainer);
+  
+  // Biến lưu trữ chart instances
+  let chart1Instance = null;
+  let chart2Instance = null;
+  
+  // Hàm render biểu đồ
+  const renderCharts = async (year) => {
+    const allDocs = await getAllDocs();
+    
+    // Lọc theo năm (dựa trên ngày lưu)
+    const filteredDocs = allDocs.filter(doc => {
+      const docYear = new Date(doc.createdAt).getFullYear();
+      return docYear === parseInt(year);
+    });
+    
+    // ===== BIỂU ĐỒ 1: Theo loại tài liệu =====
+    const typeStats = {
+      totrinh: 0,
+      quyetdinh: 0,
+      khenthuong: 0,
+      baocao: 0
+    };
+    
+    filteredDocs.forEach(doc => {
+      if (typeStats.hasOwnProperty(doc.type)) {
+        typeStats[doc.type]++;
+      }
+    });
+    
+    if (chart1Instance) chart1Instance.destroy();
+    
+    const ctx1 = chart1Canvas.getContext('2d');
+    chart1Instance = new Chart(ctx1, {
+  type: 'pie',
+  data: {
+    labels: ['Tờ trình', 'Quyết định', 'Khen thưởng', 'Báo cáo'],
+    datasets: [{
+      data: [typeStats.totrinh, typeStats.quyetdinh, typeStats.khenthuong, typeStats.baocao],
+      backgroundColor: [
+        'rgba(54, 162, 235, 0.8)',
+        'rgba(255, 99, 132, 0.8)',
+        'rgba(255, 206, 86, 0.8)',
+        'rgba(75, 192, 192, 0.8)'
+      ],
+      borderColor: '#fff',
+      borderWidth: 3
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {
+          padding: 15,
+          font: {
+            size: 13,
+            weight: '500'
+          },
+          color: '#005F9E',
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: 12,
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            return `${label}: ${value} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  }
+});
+    
+    // ===== BIỂU ĐỒ 2: Theo người thực hiện =====
+    const executorStats = {};
+    filteredDocs.forEach(doc => {
+      const executor = doc.executor || 'Chưa phân công';
+      executorStats[executor] = (executorStats[executor] || 0) + 1;
+    });
+    
+    const sortedExecutors = Object.entries(executorStats).sort((a, b) => b[1] - a[1]);
+    const executorLabels = sortedExecutors.map(([name]) => name);
+    const executorData = sortedExecutors.map(([, count]) => count);
+    
+    const colors = executorLabels.map((_, index) => {
+      const hue = (index * 360 / executorLabels.length) % 360;
+      return `hsla(${hue}, 70%, 60%, 0.7)`;
+    });
+    
+    const borderColors = executorLabels.map((_, index) => {
+      const hue = (index * 360 / executorLabels.length) % 360;
+      return `hsla(${hue}, 70%, 50%, 1)`;
+    });
+    
+    if (chart2Instance) chart2Instance.destroy();
+    
+    const ctx2 = chart2Canvas.getContext('2d');
+    chart2Instance = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: executorLabels,
+        datasets: [{
+          label: 'Số lượng tài liệu',
+          data: executorData,
+          backgroundColor: colors,
+          borderColor: borderColors,
+          borderWidth: 2,
+          barPercentage: 0.5,
+          categoryPercentage: 0.6,
+          maxBarThickness: 80
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => `Số lượng: ${context.parsed.y} tài liệu`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          },
+          x: {
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        }
+      }
+    });
+  };
+  
+  renderCharts(yearSelect.value);
+  
+  yearSelect.addEventListener('change', () => {
+    renderCharts(yearSelect.value);
+  });
+}
+
 // ======= ĐIỀU HƯỚNG =======
 let currentRoute = 'totrinh';
 function navigateTo(r) {
   currentRoute = r;
   document.querySelectorAll('#app-menu a')
     .forEach(a => a.classList.toggle('active', a.dataset.key === r));
-  if (r === 'luutru') renderArchive();
+  if (r === 'thongke') renderThongKePage();
+  else if (r === 'luutru') renderArchive();
   else if (r === 'banhanh') renderBanhanhPage();
   else if (r === 'quanly') renderAdminPage();
   else if (TYPES.includes(r)) renderDocEntryPage(r);
