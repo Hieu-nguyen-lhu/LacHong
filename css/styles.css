@@ -31,7 +31,7 @@ html,body{
   align-items:center;
   justify-content:space-between;
   padding:18px 24px;
-  background:linear-gradient(90deg,#005F9E 0%,#007BFF 100%);
+  background:linear-gradient(to right, #50b4ff, #005baa);
   color:#fff;
 }
 
@@ -41,14 +41,7 @@ html,body{
   align-items:center;
 }
 
-.brand img{
-  height:80px;
-  width:100px;
-  object-fit:contain;
-  border-radius:6px;
-  background:#fff;
-  padding:4px;
-}
+
 
 .brand .title{
   font-weight:700;
@@ -520,17 +513,19 @@ textarea:focus-visible{
 }
 
 /* ===== NÚT XUẤT EXCEL ===== */
+/* ===== NÚT XUẤT EXCEL ===== */
 .excel-export-btn{
-  padding:6px 10px !important;
+  padding:12px;
   border-radius:8px !important;
   background:#107C41 !important;
   color:#fff !important;
+  border:none;
   text-decoration:none;
-  font-weight:600;
   display:inline-flex;
   align-items:center;
   transition:all 0.2s ease;
   margin-left:auto;
+  cursor:pointer;
 }
 
 .excel-export-btn:hover{

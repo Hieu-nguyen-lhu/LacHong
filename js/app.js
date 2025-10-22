@@ -452,16 +452,21 @@ function renderMenu(activeKey) {
   const menu = document.getElementById('app-menu');
   menu.innerHTML = '';
   
+  const cur = getCurrentUser();
+  
   const items = [
     { k: 'totrinh', t: 'Tờ trình' },
     { k: 'quyetdinh', t: 'Quyết định' },
     { k: 'khenthuong', t: 'Khen thưởng' },
-    { k: 'baocao', t: 'Báo cáo' },
-    { k: 'banhanh', t: 'Ban hành' },
-    { k: 'luutru', t: 'Lưu trữ' }
+    { k: 'baocao', t: 'Báo cáo' }
+    
   ];
   
-  const cur = getCurrentUser();
+  // CHỈ ADMIN MỚI THẤY "LƯU TRỮ"
+  if (cur && cur.role === 'admin') {
+    items.push({ k: 'luutru', t: 'Lưu trữ' },{ k: 'banhanh', t: 'Ban hành' });
+  }
+  
   if (cur && cur.role === 'admin') items.push({ k: 'quanly', t: 'Quản lý' });
   
   items.forEach(it => {
@@ -474,15 +479,17 @@ function renderMenu(activeKey) {
     menu.appendChild(a);
   });
   
-  // THÊM NÚT XUẤT EXCEL
-  const excelBtn = document.createElement('a');
-  excelBtn.href = 'Xuất file excel';
-  excelBtn.className = 'excel-export-btn';
-  excelBtn.innerHTML = `
-    <img src="icons8-excel-50.png"; style="width:20px; height:20px;">
-  `;
-  excelBtn.onclick = exportToExcel;
-  menu.appendChild(excelBtn);
+  // CHỈ ADMIN MỚI THẤY NÚT XUẤT EXCEL
+  if (cur && cur.role === 'admin') {
+    const excelBtn = document.createElement('button');
+    excelBtn.type = 'button';
+    excelBtn.className = 'excel-export-btn';
+    excelBtn.innerHTML = `
+      <img src="icons8-excel-50.png" alt="Excel" style="width:18px;height:18px;">
+    `;
+    excelBtn.onclick = exportToExcel;
+    menu.appendChild(excelBtn);
+  }
 }
 
 // ======= FORM NHẬP - LAYOUT MỚI 2 Ô CÙNG HÀNG + NĂM =======
@@ -1051,7 +1058,7 @@ function renderArchive() {
 
     const table = document.createElement('table');
     table.className = 'archive-table';
-    table.innerHTML = '<tr><th>Số TT</th><th>Nội dung</th><th>Văn bản</th><th>Văn bản ban hành</th><th>Người thực hiện</th><th>Năm</th><th>Ngày</th><th>Ghi chú</th></tr>';
+    table.innerHTML = '<tr><th>Số TT</th><th>Nội dung</th><th>Văn bản</th><th>Văn bản ban hành</th><th>Người thực hiện</th><th>Năm văn bản</th><th>Ngày lưu</th><th>Ghi chú</th></tr>';
 
     filteredList.forEach(e => {
       const tr = document.createElement('tr');
@@ -1224,9 +1231,16 @@ function initClientUI() {
     location = 'index.html'; 
     return; 
   }
-  renderMenu('totrinh');
-  navigateTo('totrinh');
-  document.getElementById('btn-logout').onclick = () => { localStorage.removeItem('currentUser'); location = 'index.html'; };
+  
+  // CLIENT VÀO TRANG TỜ TRÌNH, ADMIN VÀO TRANG LƯU TRỮ
+  const defaultRoute = (cur.role === 'admin') ? 'luutru' : 'totrinh';
+  renderMenu(defaultRoute);
+  navigateTo(defaultRoute);
+  
+  document.getElementById('btn-logout').onclick = () => { 
+    localStorage.removeItem('currentUser'); 
+    location = 'index.html'; 
+  };
 }
 
 function initAdminUI() {
@@ -1246,6 +1260,13 @@ async function exportToExcel() {
     // Duyệt qua từng loại tài liệu
     for (const type of TYPES) {
       const docs = await getDocsByType(type);
+      
+      // SẮP XẾP THEO STT TỪ BÉ ĐẾN LỚN
+      docs.sort((a, b) => {
+        const noA = parseInt(a.no) || 0;
+        const noB = parseInt(b.no) || 0;
+        return noA - noB;
+      });
       
       // Tạo dữ liệu cho sheet
       const sheetData = [
