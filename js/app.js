@@ -1395,7 +1395,7 @@ function renderThongKePage() {
     chart1Instance = new Chart(ctx1, {
   type: 'pie',
   data: {
-    labels: ['Tờ trình', 'Quyết định', 'Khen thưởng', 'Báo cáo', 'Ban hành'],
+    labels: ['Tờ trình', 'Quyết định', 'Khen thưởng', 'Báo cáo'],
     datasets: [{
       data: [typeStats.totrinh, typeStats.quyetdinh, typeStats.khenthuong, typeStats.baocao],
       backgroundColor: [
