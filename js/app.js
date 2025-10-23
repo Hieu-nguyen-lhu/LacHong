@@ -716,17 +716,17 @@ function renderBanhanhPage() {
   main.appendChild(tabsContainer);
   
   // Khung tìm kiếm
-  const searchInput = document.createElement('input');
-  searchInput.type = 'text';
-  searchInput.placeholder = 'Tìm kiếm số TT...';
-  searchInput.style.width = '100%';
-  searchInput.style.padding = '10px 12px';
-  searchInput.style.borderRadius = '8px';
-  searchInput.style.border = '1px solid #d8e7ff';
-  searchInput.style.fontSize = '14px';
-  searchInput.style.marginBottom = '20px';
-  
-  main.appendChild(searchInput);
+const searchInput = document.createElement('input');
+searchInput.type = 'text';
+searchInput.placeholder = 'Tìm kiếm số TT hoặc tên người thực hiện...';
+searchInput.style.width = '100%';
+searchInput.style.padding = '10px 12px';
+searchInput.style.borderRadius = '8px';
+searchInput.style.border = '1px solid #d8e7ff';
+searchInput.style.fontSize = '14px';
+searchInput.style.marginBottom = '20px';
+
+main.appendChild(searchInput);
   
   const contentArea = document.createElement('div');
   main.appendChild(contentArea);
@@ -920,18 +920,47 @@ function renderArchive() {
   
   main.appendChild(tabsContainer);
   
-  // Khung tìm kiếm
-  const searchInput = document.createElement('input');
-  searchInput.type = 'text';
-  searchInput.placeholder = 'Tìm kiếm số TT hoặc tên người thực hiện...';
-  searchInput.style.width = '100%';
-  searchInput.style.padding = '10px 12px';
-  searchInput.style.borderRadius = '8px';
-  searchInput.style.border = '1px solid #d8e7ff';
-  searchInput.style.fontSize = '14px';
-  searchInput.style.marginBottom = '20px';
-  
-  main.appendChild(searchInput);
+  // Khung tìm kiếm - 3 ô
+const searchContainer = document.createElement('div');
+searchContainer.style.display = 'grid';
+searchContainer.style.gridTemplateColumns = '1fr 1fr 150px';
+searchContainer.style.gap = '12px';
+searchContainer.style.marginBottom = '20px';
+
+const searchNoInput = document.createElement('input');
+searchNoInput.type = 'text';
+searchNoInput.placeholder = 'Tìm theo số TT...';
+searchNoInput.className = 'search-input';
+searchNoInput.style.padding = '10px 12px';
+searchNoInput.style.borderRadius = '8px';
+searchNoInput.style.border = '1px solid #d8e7ff';
+searchNoInput.style.fontSize = '14px';
+
+const searchExecutorInput = document.createElement('input');
+searchExecutorInput.type = 'text';
+searchExecutorInput.placeholder = 'Tìm theo người thực hiện...';
+searchExecutorInput.className = 'search-input';
+searchExecutorInput.style.padding = '10px 12px';
+searchExecutorInput.style.borderRadius = '8px';
+searchExecutorInput.style.border = '1px solid #d8e7ff';
+searchExecutorInput.style.fontSize = '14px';
+
+const searchYearInput = document.createElement('input');
+searchYearInput.type = 'number';
+searchYearInput.placeholder = 'Năm VB...';
+searchYearInput.className = 'search-input';
+searchYearInput.style.padding = '10px 12px';
+searchYearInput.style.borderRadius = '8px';
+searchYearInput.style.border = '1px solid #d8e7ff';
+searchYearInput.style.fontSize = '14px';
+searchYearInput.style.textAlign = 'center';
+searchYearInput.min = '2000';
+searchYearInput.max = '2100';
+
+searchContainer.appendChild(searchNoInput);
+searchContainer.appendChild(searchExecutorInput);
+searchContainer.appendChild(searchYearInput);
+main.appendChild(searchContainer);
   
   const contentArea = document.createElement('div');
   main.appendChild(contentArea);
@@ -964,21 +993,37 @@ function renderArchive() {
       executorStats[executor] = (executorStats[executor] || 0) + 1;
     });
 
-    // Lọc theo search query
-    let filteredList = list;
-    if (searchQuery.trim() !== '') {
-      const query = searchQuery.trim();
-      filteredList = list.filter(e => {
-        const no = String(e.no).trim();
-        const executor = String(e.executor || '').trim().toLowerCase();
-        const queryLower = query.toLowerCase();
-        
-        const noMatch = no === query;
-        const executorMatch = executor.includes(queryLower);
-        
-        return noMatch || executorMatch;
-      });
+    // Lọc theo 3 tiêu chí
+let filteredList = list;
+const searchNo = searchQuery.no?.trim() || '';
+const searchExecutor = searchQuery.executor?.trim().toLowerCase() || '';
+const searchYear = searchQuery.year?.trim() || '';
+
+if (searchNo || searchExecutor || searchYear) {
+  filteredList = list.filter(e => {
+    let match = true;
+    
+    // Lọc theo số TT
+    if (searchNo) {
+      const no = String(e.no).trim();
+      match = match && (no === searchNo);
     }
+    
+    // Lọc theo người thực hiện
+    if (searchExecutor) {
+      const executor = String(e.executor || '').trim().toLowerCase();
+      match = match && executor.includes(searchExecutor);
+    }
+    
+    // Lọc theo năm văn bản
+    if (searchYear) {
+      const year = String(e.year || '').trim();
+      match = match && (year === searchYear);
+    }
+    
+    return match;
+  });
+}
     
     // Header với nút dropdown
     const headerContainer = document.createElement('div');
@@ -1138,23 +1183,35 @@ function renderArchive() {
     }
   };
   
-  // Mặc định hiển thị tab đầu tiên
-  renderContent(TYPES[0]);
+// Mặc định hiển thị tab đầu tiên
+renderContent(TYPES[0], { no: '', executor: '', year: '' });
   
-  // Xử lý click tab
-  tabsContainer.querySelectorAll('button').forEach(tab => {
-    tab.onclick = () => {
-      renderContent(tab.dataset.type, searchInput.value);
-    };
-  });
+// Xử lý click tab
+tabsContainer.querySelectorAll('button').forEach(tab => {
+  tab.onclick = () => {
+    renderContent(tab.dataset.type, {
+      no: searchNoInput.value,
+      executor: searchExecutorInput.value,
+      year: searchYearInput.value
+    });
+  };
+});
   
   // Xử lý tìm kiếm
-  searchInput.addEventListener('input', () => {
-    const activeTab = tabsContainer.querySelector('[data-active="true"]');
-    if (activeTab) {
-      renderContent(activeTab.dataset.type, searchInput.value);
-    }
-  });
+const handleSearch = () => {
+  const activeTab = tabsContainer.querySelector('[data-active="true"]');
+  if (activeTab) {
+    renderContent(activeTab.dataset.type, {
+      no: searchNoInput.value,
+      executor: searchExecutorInput.value,
+      year: searchYearInput.value
+    });
+  }
+};
+
+searchNoInput.addEventListener('input', handleSearch);
+searchExecutorInput.addEventListener('input', handleSearch);
+searchYearInput.addEventListener('input', handleSearch);
 }
 
 // ======= QUẢN LÝ NGƯỜI DÙNG =======
@@ -1338,7 +1395,7 @@ function renderThongKePage() {
     chart1Instance = new Chart(ctx1, {
   type: 'pie',
   data: {
-    labels: ['Tờ trình', 'Quyết định', 'Khen thưởng', 'Báo cáo'],
+    labels: ['Tờ trình', 'Quyết định', 'Khen thưởng', 'Báo cáo', 'Ban hành'],
     datasets: [{
       data: [typeStats.totrinh, typeStats.quyetdinh, typeStats.khenthuong, typeStats.baocao],
       backgroundColor: [
@@ -1381,9 +1438,23 @@ function renderThongKePage() {
             return `${label}: ${value} (${percentage}%)`;
           }
         }
+      },
+      datalabels: {
+        color: '#fff',
+        font: {
+          weight: 'bold',
+          size: 14
+        },
+        formatter: (value, context) => {
+          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+          return value > 0 ? `${value}\n(${percentage}%)` : '';
+        },
+        textAlign: 'center'
       }
     }
-  }
+  },
+  plugins: [ChartDataLabels]
 });
     
     // ===== BIỂU ĐỒ 2: Theo người thực hiện =====
