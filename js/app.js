@@ -1443,7 +1443,7 @@ function renderThongKePage() {
         color: '#fff',
         font: {
           weight: 'bold',
-          size: 14
+          size: 11
         },
         formatter: (value, context) => {
           const total = context.dataset.data.reduce((a, b) => a + b, 0);
