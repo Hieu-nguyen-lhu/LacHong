@@ -276,7 +276,19 @@ function canCurrentUserLogin(email) {
 const EXECUTOR_KEY = 'executors_list';
 
 function getExecutors() {
-  return JSON.parse(localStorage.getItem(EXECUTOR_KEY) || '[]');
+  const stored = localStorage.getItem(EXECUTOR_KEY);
+  if (!stored) {
+    // Danh sách mặc định
+    const defaultExecutors = [
+      'Phạm Nguyễn Nguyên Hương',
+      'Võ Ngọc Vinh',
+      'Đặng Đăng Khoa',
+      'Lê Phương Long'
+    ];
+    saveExecutors(defaultExecutors);
+    return defaultExecutors;
+  }
+  return JSON.parse(stored);
 }
 
 function saveExecutors(list) {
@@ -718,7 +730,7 @@ function renderBanhanhPage() {
   // Khung tìm kiếm
 const searchInput = document.createElement('input');
 searchInput.type = 'text';
-searchInput.placeholder = 'Tìm kiếm số TT hoặc tên người thực hiện...';
+searchInput.placeholder = 'Tìm kiếm số TT...';
 searchInput.style.width = '100%';
 searchInput.style.padding = '10px 12px';
 searchInput.style.borderRadius = '8px';
@@ -875,6 +887,138 @@ main.appendChild(searchInput);
       renderContent(activeTab.dataset.type, searchInput.value);
     }
   });
+}
+
+// ======= MODAL SỬA TÀI LIỆU =======
+function showEditModal(entry, type, onSuccess) {
+  const modal = document.createElement('div');
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.background = 'rgba(0,0,0,0.5)';
+  modal.style.display = 'flex';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  modal.style.zIndex = '10000';
+  
+  const modalContent = document.createElement('div');
+  modalContent.style.background = '#fff';
+  modalContent.style.borderRadius = '12px';
+  modalContent.style.padding = '24px';
+  modalContent.style.maxWidth = '600px';
+  modalContent.style.width = '90%';
+  modalContent.style.maxHeight = '90vh';
+  modalContent.style.overflowY = 'auto';
+  modalContent.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+  
+  modalContent.innerHTML = `
+    <h3 style="color:#005F9E;margin-bottom:20px">Chỉnh sửa tài liệu</h3>
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:13px;color:#52657a;margin-bottom:6px">Nội dung</label>
+      <textarea id="edit-note" style="width:100%;padding:10px;border:1px solid #d8e7ff;border-radius:8px;font-size:14px;min-height:80px;resize:vertical">${entry.note || ''}</textarea>
+    </div>
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:13px;color:#52657a;margin-bottom:6px">Người thực hiện</label>
+      <input type="text" id="edit-executor" value="${entry.executor || ''}" style="width:100%;padding:10px;border:1px solid #d8e7ff;border-radius:8px;font-size:14px">
+    </div>
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:13px;color:#52657a;margin-bottom:6px">Năm văn bản</label>
+      <input type="number" id="edit-year" value="${entry.year || ''}" min="2000" max="2100" style="width:100%;padding:10px;border:1px solid #d8e7ff;border-radius:8px;font-size:14px;text-align:center">
+    </div>
+    
+    <div style="padding:12px;background:#f0f5ff;border-radius:8px;margin-bottom:16px;font-size:13px;color:#52657a">
+      <strong>Văn bản hiện tại:</strong> ${entry.filename || 'Không có'}<br>
+      <strong>Ban hành hiện tại:</strong> ${entry.banhanhFilename || 'Không có'}<br>
+      <div style="margin-top:8px;color:#ff6600">💡 Để giữ nguyên file cũ, không chọn file mới</div>
+    </div>
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:13px;color:#52657a;margin-bottom:6px">Thay file văn bản (tùy chọn)</label>
+      <input type="file" id="edit-file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="width:100%;padding:8px;border:1px solid #d8e7ff;border-radius:8px;font-size:14px">
+    </div>
+    
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:13px;color:#52657a;margin-bottom:6px">Thay file ban hành (tùy chọn)</label>
+      <input type="file" id="edit-banhanh-file" accept=".pdf,application/pdf" style="width:100%;padding:8px;border:1px solid #d8e7ff;border-radius:8px;font-size:14px">
+    </div>
+    
+    <div style="display:flex;gap:12px;justify-content:flex-end">
+      <button id="btn-cancel" class="btn btn-ghost">Hủy</button>
+      <button id="btn-save" class="btn btn-primary">Lưu thay đổi</button>
+    </div>
+  `;
+  
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  
+  // Xử lý nút Hủy
+  modalContent.querySelector('#btn-cancel').onclick = () => {
+    document.body.removeChild(modal);
+  };
+  
+  // Xử lý nút Lưu
+  modalContent.querySelector('#btn-save').onclick = async () => {
+    const no = entry.no;
+    const note = modalContent.querySelector('#edit-note').value.trim();
+    const executor = modalContent.querySelector('#edit-executor').value.trim();
+    const year = modalContent.querySelector('#edit-year').value.trim();
+    const newFile = modalContent.querySelector('#edit-file').files[0];
+    const newBanhanhFile = modalContent.querySelector('#edit-banhanh-file').files[0];
+
+    
+    // Kiểm tra kích thước file
+    const MAX_SIZE = 50 * 1024 * 1024;
+    if (newFile && newFile.size > MAX_SIZE) {
+      return alert(`File quá lớn (${Math.round(newFile.size/1024/1024)}MB). Tối đa 50MB.`);
+    }
+    if (newBanhanhFile && newBanhanhFile.size > MAX_SIZE) {
+      return alert(`File ban hành quá lớn (${Math.round(newBanhanhFile.size/1024/1024)}MB). Tối đa 50MB.`);
+    }
+    
+    try {
+      const updates = {
+        no: no,
+        note: note,
+        executor: executor,
+        year: year
+      };
+      
+      // Nếu có file mới, cập nhật file
+      if (newFile) {
+        updates.filename = newFile.name;
+        updates.filetype = newFile.type;
+        updates.filesize = newFile.size;
+        updates.fileBlob = newFile;
+      }
+      
+      // Nếu có file ban hành mới
+      if (newBanhanhFile) {
+        updates.banhanhFilename = newBanhanhFile.name;
+        updates.banhanhFiletype = newBanhanhFile.type;
+        updates.banhanhFilesize = newBanhanhFile.size;
+        updates.banhanhFileBlob = newBanhanhFile;
+      }
+      
+      await updateDoc(entry.id, updates);
+      alert('Đã cập nhật thành công!');
+      document.body.removeChild(modal);
+      if (onSuccess) onSuccess();
+    } catch (e) {
+      alert('Lỗi khi cập nhật: ' + e.message);
+    }
+  };
+  
+  // Click outside để đóng
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  };
 }
 
 // ======= LƯU TRỮ - TABS =======
@@ -1131,10 +1275,15 @@ if (searchNo || searchExecutor || searchYear) {
         </td>
         <td>${e.executor || ''}</td>
         <td style="font-weight:600;color:#005F9E;text-align:center">${e.year || ''}</td>
-        <td style="font-size:12px;color:#6b7a8a">
-          ${new Date(e.createdAt).toLocaleString()}
-          ${cur && cur.role === 'admin' ? `<br><button class="btn btn-ghost" style="margin-top:4px" data-action="delete" data-type="${selectedType}" data-id="${e.id}">Xóa</button>` : ''}
+        <td style={{ fontSize: 12, color: "#6b7a8a" }}>
+        ${new Date(e.createdAt).toLocaleString()}
+        ${cur && cur.role === 'admin' ? `
+          <br>
+          <button class="btn" style="margin-top:4px;background:#007BFF;color:#fff" data-action="edit" data-type="${selectedType}" data-id="${e.id}">Sửa</button>
+          <button class="btn btn-ghost" style="margin-top:4px;margin-left:4px" data-action="delete" data-type="${selectedType}" data-id="${e.id}">Xóa</button>
+        ` : ''}
         </td>
+        
         ${adminNoteCell}
       `;
       table.appendChild(tr);
@@ -1151,21 +1300,35 @@ if (searchNo || searchExecutor || searchYear) {
     };
 
     table.querySelectorAll('button[data-id]').forEach(btn => {
-      btn.onclick = async () => {
-        const id = btn.dataset.id;
-        const action = btn.dataset.action;
-        const entry = await getDocById(id);
+    btn.onclick = async () => {
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    const entry = await getDocById(id);
 
-        if (action === 'download') downloadEntry(id);
-        else if (action === 'download-banhanh') downloadEntry(id, true);
-        else if (action === 'delete') {
-          if (confirm(`Xóa "${entry.filename}"?`)) {
-            await deleteDocFromDB(id);
-            renderContent(selectedType, searchInput.value);
-          }
-        }
-      };
-    });
+    if (action === 'download') downloadEntry(id);
+    else if (action === 'download-banhanh') downloadEntry(id, true);
+    else if (action === 'edit') {
+      // Hiển thị form sửa
+      showEditModal(entry, selectedType, () => {
+        renderContent(selectedType, {
+          no: searchNoInput.value,
+          executor: searchExecutorInput.value,
+          year: searchYearInput.value
+        });
+      });
+    }
+    else if (action === 'delete') {
+      if (confirm(`Xóa "${entry.filename}"?`)) {
+        await deleteDocFromDB(id);
+        renderContent(selectedType, {
+          no: searchNoInput.value,
+          executor: searchExecutorInput.value,
+          year: searchYearInput.value
+        });
+      }
+    }
+  };
+});
 
     // Xử lý lưu ghi chú admin
     if (cur && cur.role === 'admin') {
