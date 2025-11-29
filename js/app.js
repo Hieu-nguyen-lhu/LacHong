@@ -3,12 +3,13 @@
    Phiên bản: 2025-10 (IndexedDB + Người thực hiện + combobox + accordion + Năm + Ghi chú Admin)
    ============================================== */
 
-const TYPES = ['totrinh', 'quyetdinh', 'khenthuong', 'baocao'];
+const TYPES = ['totrinh', 'quyetdinh', 'khenthuong', 'baocao', 'kehoach']; // Thêm 'kehoach'
 const TYPE_LABEL = {
   totrinh: 'Tờ trình',
   quyetdinh: 'Quyết định',
   khenthuong: 'Khen thưởng',
   baocao: 'Báo cáo',
+  kehoach: 'Kế hoạch' 
 };
 
 // ======= Helper với IndexedDB =======
@@ -467,12 +468,12 @@ function renderMenu(activeKey) {
   const cur = getCurrentUser();
   
   const items = [
-    { k: 'totrinh', t: 'Tờ trình' },
-    { k: 'quyetdinh', t: 'Quyết định' },
-    { k: 'khenthuong', t: 'Khen thưởng' },
-    { k: 'baocao', t: 'Báo cáo' }
-    
-  ];
+  { k: 'totrinh', t: 'Tờ trình' },
+  { k: 'quyetdinh', t: 'Quyết định' },
+  { k: 'khenthuong', t: 'Khen thưởng' },
+  { k: 'baocao', t: 'Báo cáo' },
+  { k: 'kehoach', t: 'Kế hoạch' } 
+];
   
   // CHỈ ADMIN MỚI THẤY "LƯU TRỮ"
   if (cur && cur.role === 'admin') {
@@ -555,16 +556,19 @@ function createRowCard(type) {
   row2.className = 'row-card-row-2';
   
   const fileDiv = document.createElement('div');
+  const fileLabel = type === 'kehoach' ? 'Đính kèm (mọi định dạng)' : 'Đính kèm (*.docx)';
   fileDiv.innerHTML = `
-    <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm (*.docx)</div>
+    <div style="font-size:13px;color:#52657a;margin-bottom:6px">${fileLabel}</div>
     <input class="file-input" type="file">
     <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-filehint></div>
   `;
+
   
   const banhanhFileDiv = document.createElement('div');
+  const banhanhLabel = type === 'kehoach' ? 'Đính kèm tệp ban hành (mọi định dạng)' : 'Đính kèm tệp ban hành (*.pdf)';
   banhanhFileDiv.innerHTML = `
-    <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm tệp ban hành (*.pdf)</div>
-    <input class="banhanh-file-input" type="file" accept=".pdf,application/pdf">
+    <div style="font-size:13px;color:#52657a;margin-bottom:6px">${banhanhLabel}</div>
+    <input class="banhanh-file-input" type="file" ${type === 'kehoach' ? '' : 'accept=".pdf,application/pdf"'}>
     <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-banhanhfilehint></div>
   `;
   
@@ -584,9 +588,13 @@ function createRowCard(type) {
   div.appendChild(rowActions);
 
   const fileInput = fileDiv.querySelector('.file-input');
-  fileInput.accept = type === 'banhanh'
-    ? '.pdf,application/pdf'
-    : '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+if (type === 'kehoach') {
+  fileInput.accept = '*'; // Chấp nhận mọi loại file
+} else if (type === 'banhanh') {
+  fileInput.accept = '.pdf,application/pdf';
+} else {
+  fileInput.accept = '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+}
 
   const fileHint = fileDiv.querySelector('[data-filehint]');
   fileInput.onchange = () => {
@@ -595,6 +603,9 @@ function createRowCard(type) {
   };
 
   const banhanhFileInput = banhanhFileDiv.querySelector('.banhanh-file-input');
+  if (type === 'kehoach') {
+  banhanhFileInput.accept = '*'; // Chấp nhận mọi loại file cho kế hoạch
+}
   const banhanhFileHint = banhanhFileDiv.querySelector('[data-banhanhfilehint]');
   banhanhFileInput.onchange = () => {
     const f = banhanhFileInput.files[0];
@@ -637,12 +648,14 @@ function createRowCard(type) {
       return alert(`File ban hành quá lớn (${Math.round(banhanhFile.size / 1024 / 1024)}MB).\nVui lòng chọn file nhỏ hơn 50MB.`);
     }
 
+    // Validation cho file chính
     if (type === 'banhanh' && f && !f.name.toLowerCase().endsWith('.pdf'))
       return alert('Chỉ chấp nhận file PDF');
-    if (type !== 'banhanh' && f && !/\.(doc|docx)$/i.test(f.name))
+    if (type !== 'banhanh' && type !== 'kehoach' && f && !/\.(doc|docx)$/i.test(f.name))
       return alert('Chỉ chấp nhận .doc hoặc .docx');
 
-    if (banhanhFile && !banhanhFile.name.toLowerCase().endsWith('.pdf'))
+    // Validation cho file ban hành (không áp dụng cho kế hoạch)
+    if (type !== 'kehoach' && banhanhFile && !banhanhFile.name.toLowerCase().endsWith('.pdf'))
       return alert('File ban hành chỉ chấp nhận định dạng PDF');
 
     try {
@@ -687,7 +700,7 @@ function renderBanhanhPage() {
   const main = document.getElementById('app-content');
   main.innerHTML = '<h2>Ban hành</h2>';
   
-  const BANHANH_TYPES = ['totrinh', 'quyetdinh', 'khenthuong', 'baocao'];
+ const BANHANH_TYPES = ['totrinh', 'quyetdinh', 'khenthuong', 'baocao', 'kehoach'];
   
   // Tabs
   const tabsContainer = document.createElement('div');
@@ -1543,7 +1556,8 @@ function renderThongKePage() {
       totrinh: 0,
       quyetdinh: 0,
       khenthuong: 0,
-      baocao: 0
+      baocao: 0,
+      kehoach: 0
     };
     
     filteredDocs.forEach(doc => {
@@ -1558,14 +1572,15 @@ function renderThongKePage() {
     chart1Instance = new Chart(ctx1, {
   type: 'pie',
   data: {
-    labels: ['Tờ trình', 'Quyết định', 'Khen thưởng', 'Báo cáo'],
+    labels: ['Tờ trình', 'Quyết định', 'Khen thưởng', 'Báo cáo', 'Kế hoạch'],
     datasets: [{
-      data: [typeStats.totrinh, typeStats.quyetdinh, typeStats.khenthuong, typeStats.baocao],
+      data: [typeStats.totrinh, typeStats.quyetdinh, typeStats.khenthuong, typeStats.baocao, typeStats.kehoach],
       backgroundColor: [
         'rgba(54, 162, 235, 0.8)',
         'rgba(255, 99, 132, 0.8)',
         'rgba(255, 206, 86, 0.8)',
-        'rgba(75, 192, 192, 0.8)'
+        'rgba(75, 192, 192, 0.8)',
+        'rgba(153, 102, 255, 0.8)'
       ],
       borderColor: '#fff',
       borderWidth: 3
