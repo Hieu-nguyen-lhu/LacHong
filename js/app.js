@@ -552,26 +552,24 @@ function createRowCard(type) {
   row1.appendChild(yearContainer);
   
   // Hàng 2: 2 file đính kèm
+
   const row2 = document.createElement('div');
   row2.className = 'row-card-row-2';
-  
+
   const fileDiv = document.createElement('div');
-  const fileLabel = type === 'kehoach' ? 'Đính kèm (mọi định dạng)' : 'Đính kèm (*.docx)';
   fileDiv.innerHTML = `
-    <div style="font-size:13px;color:#52657a;margin-bottom:6px">${fileLabel}</div>
+    <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm (mọi định dạng)</div>
     <input class="file-input" type="file">
     <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-filehint></div>
   `;
 
-  
   const banhanhFileDiv = document.createElement('div');
-  const banhanhLabel = type === 'kehoach' ? 'Đính kèm tệp ban hành (mọi định dạng)' : 'Đính kèm tệp ban hành (*.pdf)';
   banhanhFileDiv.innerHTML = `
-    <div style="font-size:13px;color:#52657a;margin-bottom:6px">${banhanhLabel}</div>
-    <input class="banhanh-file-input" type="file" ${type === 'kehoach' ? '' : 'accept=".pdf,application/pdf"'}>
+    <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm tệp ban hành (mọi định dạng)</div>
+    <input class="banhanh-file-input" type="file">
     <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-banhanhfilehint></div>
   `;
-  
+
   row2.appendChild(fileDiv);
   row2.appendChild(banhanhFileDiv);
   
@@ -587,14 +585,8 @@ function createRowCard(type) {
   div.appendChild(row2);
   div.appendChild(rowActions);
 
-  const fileInput = fileDiv.querySelector('.file-input');
-if (type === 'kehoach') {
-  fileInput.accept = '*'; // Chấp nhận mọi loại file
-} else if (type === 'banhanh') {
-  fileInput.accept = '.pdf,application/pdf';
-} else {
-  fileInput.accept = '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-}
+const fileInput = fileDiv.querySelector('.file-input');
+fileInput.accept = '*'; // TẤT CẢ các loại đều chấp nhận mọi file
 
   const fileHint = fileDiv.querySelector('[data-filehint]');
   fileInput.onchange = () => {
@@ -603,9 +595,8 @@ if (type === 'kehoach') {
   };
 
   const banhanhFileInput = banhanhFileDiv.querySelector('.banhanh-file-input');
-  if (type === 'kehoach') {
-  banhanhFileInput.accept = '*'; // Chấp nhận mọi loại file cho kế hoạch
-}
+  banhanhFileInput.accept = '*'; // TẤT CẢ các loại đều chấp nhận mọi file
+
   const banhanhFileHint = banhanhFileDiv.querySelector('[data-banhanhfilehint]');
   banhanhFileInput.onchange = () => {
     const f = banhanhFileInput.files[0];
@@ -648,15 +639,6 @@ if (type === 'kehoach') {
       return alert(`File ban hành quá lớn (${Math.round(banhanhFile.size / 1024 / 1024)}MB).\nVui lòng chọn file nhỏ hơn 50MB.`);
     }
 
-    // Validation cho file chính
-    if (type === 'banhanh' && f && !f.name.toLowerCase().endsWith('.pdf'))
-      return alert('Chỉ chấp nhận file PDF');
-    if (type !== 'banhanh' && type !== 'kehoach' && f && !/\.(doc|docx)$/i.test(f.name))
-      return alert('Chỉ chấp nhận .doc hoặc .docx');
-
-    // Validation cho file ban hành (không áp dụng cho kế hoạch)
-    if (type !== 'kehoach' && banhanhFile && !banhanhFile.name.toLowerCase().endsWith('.pdf'))
-      return alert('File ban hành chỉ chấp nhận định dạng PDF');
 
     try {
       await saveDoc(type, no, note, executor, f, cur, banhanhFile, year);
