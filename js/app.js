@@ -46,10 +46,14 @@ function initDB() {
   });
 }
 
-// Lưu document (THAY THẾ localStorage)
-async function saveDoc(type, no, note, executor, file, currentUser, banhanhFile = null, year = null, adminNote = '') {
+// Thay thế toàn bộ hàm saveDoc
+async function saveDoc(type, no, note, executor, files, currentUser, banhanhFiles = null, year = null, adminNote = '') {
   try {
     const db = await initDB();
+    
+    // Chuyển FileList thành mảng
+    const filesArray = files ? Array.from(files) : [];
+    const banhanhFilesArray = banhanhFiles ? Array.from(banhanhFiles) : [];
     
     const entry = {
       id: uid(),
@@ -59,14 +63,28 @@ async function saveDoc(type, no, note, executor, file, currentUser, banhanhFile 
       executor: executor,
       year: year || getCurrentYear(),
       adminNote: adminNote || '',
-      filename: file ? file.name : '',
-      filetype: file ? file.type : '',
-      filesize: file ? file.size : 0,
-      fileBlob: file || null, // Lưu trực tiếp File object
-      banhanhFilename: banhanhFile ? banhanhFile.name : '',
-      banhanhFiletype: banhanhFile ? banhanhFile.type : '',
-      banhanhFilesize: banhanhFile ? banhanhFile.size : 0,
-      banhanhFileBlob: banhanhFile || null,
+      // Lưu mảng files
+      files: filesArray.map(f => ({
+        name: f.name,
+        type: f.type,
+        size: f.size,
+        blob: f
+      })),
+      banhanhFiles: banhanhFilesArray.map(f => ({
+        name: f.name,
+        type: f.type,
+        size: f.size,
+        blob: f
+      })),
+      // Giữ lại các trường cũ để tương thích ngược
+      filename: filesArray[0]?.name || '',
+      filetype: filesArray[0]?.type || '',
+      filesize: filesArray[0]?.size || 0,
+      fileBlob: filesArray[0] || null,
+      banhanhFilename: banhanhFilesArray[0]?.name || '',
+      banhanhFiletype: banhanhFilesArray[0]?.type || '',
+      banhanhFilesize: banhanhFilesArray[0]?.size || 0,
+      banhanhFileBlob: banhanhFilesArray[0] || null,
       createdAt: new Date().toISOString(),
       authorEmail: currentUser ? currentUser.email : 'anonymous'
     };
@@ -196,8 +214,8 @@ async function updateDoc(id, updates) {
   }
 }
 
-// Download file (THAY THẾ downloadEntry cũ)
-async function downloadEntry(entryOrId, isBanhanh = false) {
+
+async function downloadEntry(entryOrId, isBanhanh = false, fileIndex = null) {
   try {
     let entry;
     if (typeof entryOrId === 'string') {
@@ -208,19 +226,73 @@ async function downloadEntry(entryOrId, isBanhanh = false) {
     
     if (!entry) return alert('Không tìm thấy tài liệu.');
     
-    const blob = isBanhanh ? entry.banhanhFileBlob : entry.fileBlob;
-    const filename = isBanhanh ? entry.banhanhFilename : entry.filename;
+    // Lấy danh sách files
+    const filesArray = isBanhanh ? (entry.banhanhFiles || []) : (entry.files || []);
     
-    if (!blob) return alert('Không có file để tải xuống.');
+    // Nếu không có files mới, dùng cấu trúc cũ (tương thích ngược)
+    if (filesArray.length === 0) {
+      const blob = isBanhanh ? entry.banhanhFileBlob : entry.fileBlob;
+      const filename = isBanhanh ? entry.banhanhFilename : entry.filename;
+      
+      if (!blob) return alert('Không có file để tải xuống.');
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'download';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      return;
+    }
     
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename || 'download';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    // Nếu chỉ định fileIndex, tải file cụ thể
+    if (fileIndex !== null) {
+      const fileObj = filesArray[fileIndex];
+      if (!fileObj || !fileObj.blob) return alert('Không tìm thấy file.');
+      
+      const url = URL.createObjectURL(fileObj.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileObj.name || 'download';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      return;
+    }
+    
+    // Nếu không chỉ định index, tải tất cả files
+    if (filesArray.length === 1) {
+      const fileObj = filesArray[0];
+      const url = URL.createObjectURL(fileObj.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileObj.name || 'download';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } else {
+      const fileList = filesArray.map((f, i) => `${i + 1}. ${f.name}`).join('\n');
+      const choice = confirm(`Tài liệu có ${filesArray.length} files:\n\n${fileList}\n\nBấm OK để tải tất cả, Cancel để chọn từng file.`);
+      
+      if (choice) {
+        filesArray.forEach((fileObj, i) => {
+          setTimeout(() => {
+            const url = URL.createObjectURL(fileObj.blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileObj.name || `download_${i + 1}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          }, i * 200);
+        });
+      }
+    }
   } catch (e) {
     alert('Lỗi khi tải file: ' + e.message);
   }
@@ -559,14 +631,14 @@ function createRowCard(type) {
   const fileDiv = document.createElement('div');
   fileDiv.innerHTML = `
     <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm (mọi định dạng)</div>
-    <input class="file-input" type="file">
+    <input class="file-input" type="file" multiple>
     <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-filehint></div>
   `;
 
   const banhanhFileDiv = document.createElement('div');
   banhanhFileDiv.innerHTML = `
     <div style="font-size:13px;color:#52657a;margin-bottom:6px">Đính kèm tệp ban hành (mọi định dạng)</div>
-    <input class="banhanh-file-input" type="file">
+    <input class="banhanh-file-input" type="file" multiple>
     <div style="font-size:11px;color:#8b99b0;margin-top:2px" data-banhanhfilehint></div>
   `;
 
@@ -590,18 +662,34 @@ fileInput.accept = '*'; // TẤT CẢ các loại đều chấp nhận mọi fil
 
   const fileHint = fileDiv.querySelector('[data-filehint]');
   fileInput.onchange = () => {
-    const f = fileInput.files[0];
-    fileHint.textContent = f ? `${f.name} (${Math.round(f.size / 1024)} KB)` : '';
-  };
+  const files = fileInput.files;
+  if (files.length === 0) {
+    fileHint.textContent = '';
+  } else if (files.length === 1) {
+    const f = files[0];
+    fileHint.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
+  } else {
+    const totalSize = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+    fileHint.textContent = `${files.length} files (${Math.round(totalSize / 1024)} KB)`;
+  }
+};
 
   const banhanhFileInput = banhanhFileDiv.querySelector('.banhanh-file-input');
   banhanhFileInput.accept = '*'; // TẤT CẢ các loại đều chấp nhận mọi file
 
   const banhanhFileHint = banhanhFileDiv.querySelector('[data-banhanhfilehint]');
   banhanhFileInput.onchange = () => {
-    const f = banhanhFileInput.files[0];
-    banhanhFileHint.textContent = f ? `${f.name} (${Math.round(f.size / 1024)} KB)` : '';
-  };
+  const files = banhanhFileInput.files;
+  if (files.length === 0) {
+    banhanhFileHint.textContent = '';
+  } else if (files.length === 1) {
+    const f = files[0];
+    banhanhFileHint.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
+  } else {
+    const totalSize = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+    banhanhFileHint.textContent = `${files.length} files (${Math.round(totalSize / 1024)} KB)`;
+  }
+};
 
   div.querySelector('.remove-btn').onclick = () => div.remove();
   
@@ -613,10 +701,10 @@ fileInput.accept = '*'; // TẤT CẢ các loại đều chấp nhận mọi fil
     const note = noteInput.value.trim();
     const executor = executorCombo.getExecutor();
     const year = yearInput.value.trim();
-    const f = fileInput.files[0];
-    const banhanhFile = banhanhFileInput.files[0];
+    const files = fileInput.files;
+    const banhanhFiles = banhanhFileInput.files;
 
-    if (!f) return alert('Vui lòng chọn tệp đính kèm!');
+    if (files.length === 0) return alert('Vui lòng chọn ít nhất 1 tệp đính kèm!');
     if (!year) return alert('Vui lòng nhập năm!');
 
     // Tự động tạo số thứ tự
@@ -632,17 +720,23 @@ fileInput.accept = '*'; // TẤT CẢ các loại đều chấp nhận mọi fil
 
     // Kiểm tra kích thước file (GIỚI HẠN 50MB)
     const MAX_SIZE = 50 * 1024 * 1024;
-    if (f.size > MAX_SIZE) {
-      return alert(`File "${f.name}" quá lớn (${Math.round(f.size / 1024 / 1024)}MB).\nVui lòng chọn file nhỏ hơn 50MB.`);
+
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size > MAX_SIZE) {
+        return alert(`File "${files[i].name}" quá lớn (${Math.round(files[i].size / 1024 / 1024)}MB).\nVui lòng chọn file nhỏ hơn 50MB.`);
+      }
     }
-    if (banhanhFile && banhanhFile.size > MAX_SIZE) {
-      return alert(`File ban hành quá lớn (${Math.round(banhanhFile.size / 1024 / 1024)}MB).\nVui lòng chọn file nhỏ hơn 50MB.`);
-    }
+
+    for (let i = 0; i < banhanhFiles.length; i++) {
+      if (banhanhFiles[i].size > MAX_SIZE) {
+        return alert(`File ban hành "${banhanhFiles[i].name}" quá lớn (${Math.round(banhanhFiles[i].size / 1024 / 1024)}MB).\nVui lòng chọn file nhỏ hơn 50MB.`);
+      }
+}
 
 
     try {
-      await saveDoc(type, no, note, executor, f, cur, banhanhFile, year);
-      alert(`Đã lưu thành công! Số thứ tự: ${no}`);
+      await saveDoc(type, no, note, executor, files, cur, banhanhFiles, year);
+alert(`Đã lưu thành công! Số thứ tự: ${no}\n${files.length} file văn bản, ${banhanhFiles.length} file ban hành`);
       noteInput.value = '';
       fileInput.value = '';
       fileHint.textContent = '';
@@ -1247,6 +1341,68 @@ if (searchNo || searchExecutor || searchYear) {
     filteredList.forEach(e => {
       const tr = document.createElement('tr');
       
+      // Lấy danh sách files
+      const filesArray = e.files || [];
+      const banhanhFilesArray = e.banhanhFiles || [];
+      
+      // === TẠO HTML CHO DANH SÁCH FILES VĂN BẢN ===
+      let filesHtml = '';
+      if (filesArray.length > 0) {
+        // Có nhiều files mới
+        filesHtml = filesArray.map((f, i) => 
+          `<div style="margin-bottom:4px">
+            <a href="javascript:void(0)" 
+               style="color:#0066cc;font-weight:500;font-size:13px;text-decoration:underline;cursor:pointer;display:inline-block;line-height:1.4;word-break:break-word;" 
+               data-action="download" 
+               data-id="${e.id}" 
+               data-fileindex="${i}"
+               title="Click để tải xuống">
+              ${i + 1}. ${f.name}
+            </a>
+          </div>`
+        ).join('');
+      } else if (e.filename) {
+        // Tương thích ngược với dữ liệu cũ
+        filesHtml = `<a href="javascript:void(0)" 
+                        style="color:#0066cc;font-weight:500;font-size:13px;text-decoration:underline;cursor:pointer;display:block;line-height:1.4;word-break:break-word;" 
+                        data-action="download" 
+                        data-id="${e.id}"
+                        title="Click để tải xuống">
+                       ${e.filename}
+                     </a>`;
+      } else {
+        filesHtml = '<span style="color:#999">Không có file</span>';
+      }
+      
+      // === TẠO HTML CHO DANH SÁCH FILES BAN HÀNH ===
+      let banhanhFilesHtml = '';
+      if (banhanhFilesArray.length > 0) {
+        // Có nhiều files ban hành mới
+        banhanhFilesHtml = banhanhFilesArray.map((f, i) => 
+          `<div style="margin-bottom:4px">
+            <a href="javascript:void(0)" 
+               style="color:#0066cc;font-weight:500;font-size:13px;text-decoration:underline;cursor:pointer;display:inline-block;line-height:1.4;word-break:break-word;" 
+               data-action="download-banhanh" 
+               data-id="${e.id}" 
+               data-fileindex="${i}"
+               title="Click để tải xuống">
+              ${i + 1}. ${f.name}
+            </a>
+          </div>`
+        ).join('');
+      } else if (e.banhanhFilename) {
+        // Tương thích ngược
+        banhanhFilesHtml = `<a href="javascript:void(0)" 
+                               style="color:#0066cc;font-weight:500;font-size:13px;text-decoration:underline;cursor:pointer;display:block;line-height:1.4;word-break:break-word;" 
+                               data-action="download-banhanh" 
+                               data-id="${e.id}"
+                               title="Click để tải xuống">
+                              ${e.banhanhFilename}
+                            </a>`;
+      } else {
+        banhanhFilesHtml = '<span style="color:#999">Không có file</span>';
+      }
+      
       // Tạo ô ghi chú cho admin
       let adminNoteCell = '';
       if (cur && cur.role === 'admin') {
@@ -1258,19 +1414,11 @@ if (searchNo || searchExecutor || searchYear) {
       tr.innerHTML = `
         <td style="font-weight:600;color:#005F9E">${e.no || ''}</td>
         <td>${e.note || ''}</td>
-        <td>
-          ${e.filename ? `<span style="color:#0066cc;font-weight:500;font-size:13px;display:block;margin-bottom:4px;line-height:1.3;word-break:break-word;">${e.filename}</span>` : ''}
-          <button class="btn" style="color:white;background:#007BFF;margin-top:4px" data-action="download" data-type="${selectedType}" data-id="${e.id}">
-            ${e.filename ? 'Tải xuống' : 'Không có file'}
-          </button>
-        </td>
-        <td>
-          ${e.banhanhFilename ? `<span style="color:#0066cc;font-weight:500;font-size:13px;display:block;margin-bottom:4px;line-height:1.3;word-break:break-word;">${e.banhanhFilename}</span>` : ''}
-          ${e.banhanhFilename ? `<button class="btn" style="color:white;background:#007BFF;margin-top:4px" data-action="download-banhanh" data-type="${selectedType}" data-id="${e.id}">Tải xuống</button>` : '<span style="color:#999">Không có file</span>'}
-        </td>
+        <td>${filesHtml}</td>
+        <td>${banhanhFilesHtml}</td>
         <td>${e.executor || ''}</td>
         <td style="font-weight:600;color:#005F9E;text-align:center">${e.year || ''}</td>
-        <td style={{ fontSize: 12, color: "#6b7a8a" }}>
+        <td style="font-size:12px;color:#6b7a8a">
         ${new Date(e.createdAt).toLocaleString()}
         ${cur && cur.role === 'admin' ? `
           <br>
@@ -1278,7 +1426,6 @@ if (searchNo || searchExecutor || searchYear) {
           <button class="btn btn-ghost" style="margin-top:4px;margin-left:4px" data-action="delete" data-type="${selectedType}" data-id="${e.id}">Xóa</button>
         ` : ''}
         </td>
-        
         ${adminNoteCell}
       `;
       table.appendChild(tr);
@@ -1294,36 +1441,47 @@ if (searchNo || searchExecutor || searchYear) {
       arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
     };
 
-    table.querySelectorAll('button[data-id]').forEach(btn => {
-    btn.onclick = async () => {
-    const id = btn.dataset.id;
-    const action = btn.dataset.action;
-    const entry = await getDocById(id);
+    // === XỬ LÝ SỰ KIỆN CLICK - BẮT CẢ BUTTON VÀ LINK ===
+    table.querySelectorAll('button[data-id], a[data-id]').forEach(elem => {
+      elem.onclick = async (e) => {
+        e.preventDefault(); // Ngăn link chuyển trang
+        
+        const id = elem.dataset.id;
+        const action = elem.dataset.action;
+        const fileIndex = elem.dataset.fileindex ? parseInt(elem.dataset.fileindex) : null;
+        const entry = await getDocById(id);
 
-    if (action === 'download') downloadEntry(id);
-    else if (action === 'download-banhanh') downloadEntry(id, true);
-    else if (action === 'edit') {
-      // Hiển thị form sửa
-      showEditModal(entry, selectedType, () => {
-        renderContent(selectedType, {
-          no: searchNoInput.value,
-          executor: searchExecutorInput.value,
-          year: searchYearInput.value
-        });
-      });
-    }
-    else if (action === 'delete') {
-      if (confirm(`Xóa "${entry.filename}"?`)) {
-        await deleteDocFromDB(id);
-        renderContent(selectedType, {
-          no: searchNoInput.value,
-          executor: searchExecutorInput.value,
-          year: searchYearInput.value
-        });
-      }
-    }
-  };
-});
+        if (action === 'download') {
+          downloadEntry(id, false, fileIndex);
+        }
+        else if (action === 'download-banhanh') {
+          downloadEntry(id, true, fileIndex);
+        }
+        else if (action === 'edit') {
+          showEditModal(entry, selectedType, () => {
+            renderContent(selectedType, {
+              no: searchNoInput.value,
+              executor: searchExecutorInput.value,
+              year: searchYearInput.value
+            });
+          });
+        }
+        else if (action === 'delete') {
+          const filesCount = (entry.files?.length || 0) + (entry.banhanhFiles?.length || 0);
+          const confirmMsg = filesCount > 0 
+            ? `Xóa tài liệu này (${filesCount} files)?`
+            : `Xóa "${entry.filename}"?`;
+          if (confirm(confirmMsg)) {
+            await deleteDocFromDB(id);
+            renderContent(selectedType, {
+              no: searchNoInput.value,
+              executor: searchExecutorInput.value,
+              year: searchYearInput.value
+            });
+          }
+        }
+      };
+    });
 
     // Xử lý lưu ghi chú admin
     if (cur && cur.role === 'admin') {
@@ -1340,6 +1498,7 @@ if (searchNo || searchExecutor || searchYear) {
       });
     }
   };
+    
   
 // Mặc định hiển thị tab đầu tiên
 renderContent(TYPES[0], { no: '', executor: '', year: '' });
